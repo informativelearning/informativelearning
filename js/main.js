@@ -174,7 +174,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Check if we've reached 3 clicks
                 if (logoClickCount === 3) {
                     // Redirect to the secret page
-                    window.location.href = 'secret-page.html';
+                    window.location.href = 'scientific.html';
                     
                     // Reset counters
                     secretActivated = false;

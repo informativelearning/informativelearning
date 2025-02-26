@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Scientific Access - Aurora</title>
+  <style>
+    /* Educational styling */
+    body {
+      font-family: Georgia, "Times New Roman", Times, serif;
+      background: #f7f7f7;
+      color: #333;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      max-width: 600px;
+      margin: 50px auto;
+      background: #fff;
+      border: 2px solid #ccc;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h1 {
+      text-align: center;
+      font-size: 2em;
+      margin-bottom: 20px;
+    }
+    .instruction {
+      text-align: center;
+      font-size: 1.1em;
+      margin-bottom: 20px;
+    }
+    .pin-input {
+      width: 100%;
+      padding: 10px;
+      font-size: 1em;
+      margin-bottom: 20px;
+      border: 1px solid #aaa;
+      border-radius: 4px;
+    }
+    .submit-btn {
+      width: 100%;
+      padding: 10px;
+      font-size: 1em;
+      background-color: #0057b7;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .submit-btn:hover {
+      background-color: #003f7f;
+    }
+    .error {
+      text-align: center;
+      color: #c00;
+      margin-top: 10px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Scientific Verification</h1>
+    <p class="instruction">
+      Please enter your educational access PIN to proceed:
+    </p>
+    <input
+      type="password"
+      id="pinInput"
+      class="pin-input"
+      placeholder="Enter PIN"
+    />
+    <button id="submitBtn" class="submit-btn">Submit</button>
+    <p id="errorMsg" class="error">Incorrect PIN. Please try again.</p>
+  </div>
+
+  <script>
+    // For demonstration, the correct PIN is "1234"
+    const correctPIN = "1234";
+
+    document.getElementById("submitBtn").addEventListener("click", function () {
+      const enteredPIN = document.getElementById("pinInput").value;
+      if (enteredPIN === correctPIN) {
+        // If the PIN is correct, redirect to the protected content page
+        window.location.href = "protected.html";
+      } else {
+        // Display error message if the PIN is incorrect
+        const errorMsg = document.getElementById("errorMsg");
+        errorMsg.style.display = "block";
+      }
+    });
+  </script>
+</body>
+</html>
