@@ -160,30 +160,3 @@ document.addEventListener('keydown', function(event) {
     }
 });
 
-// Add event listener to the logo
-document.addEventListener('DOMContentLoaded', function() {
-    const logo = document.querySelector('.navbar-brand');
-    
-    if (logo) {
-        logo.addEventListener('click', function(event) {
-            // Only count clicks if the secret phrase has been entered
-            if (secretActivated) {
-                logoClickCount++;
-                console.log(`Logo clicked ${logoClickCount} times`);
-                
-                // Check if we've reached 3 clicks
-                if (logoClickCount === 3) {
-                    // Redirect to the secret page
-                    window.location.href = 'scientific.html';
-                    
-                    // Reset counters
-                    secretActivated = false;
-                    logoClickCount = 0;
-                    
-                    // Prevent the default anchor behavior
-                    event.preventDefault();
-                }
-            }
-        });
-    }
-});
