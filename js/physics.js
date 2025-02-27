@@ -33,24 +33,29 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Check if the secret phrase has been typed
             if (secretPhrase.toLowerCase() === targetPhrase) {
-                // Open a blank window first
+                // Open about:blank window
                 const newWindow = window.open('about:blank', '_blank');
                 if (newWindow) {
-                    // Write initial HTML to set title and favicon immediately
-                    newWindow.document.write(`
-                        <!DOCTYPE html>
-                        <html>
-                        <head>
-                            <title>Dashboard</title>
-                            <link rel="icon" type="image/x-icon" href="Dashboard-favicon.ico">
-                        </head>
-                        <body>
-                            <script>
-                                window.location.href = 'scientific.html';
-                            </script>
-                        </body>
-                        </html>
-                    `);
+                    // Fetch the scientific.html content
+                    fetch('scientific.html')
+                        .then(response => response.text())
+                        .then(html => {
+                            // Write content to the new window while preserving about:blank URL
+                            newWindow.document.write(`
+                                <!DOCTYPE html>
+                                <html>
+                                <head>
+                                    <title>Dashboard</title>
+                                    <link rel="icon" type="image/x-icon" href="Dashboard-favicon.ico">
+                                    <base href="${window.location.origin}${window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/'))}/">
+                                </head>
+                                <body>
+                                    ${html}
+                                </body>
+                                </html>
+                            `);
+                            newWindow.document.close();
+                        });
                 }
                 // Reset the secret phrase
                 secretPhrase = '';
