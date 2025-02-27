@@ -4,23 +4,16 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Listen for keypress events
     document.addEventListener('keypress', function(e) {
-        const char = String.fromCharCode(e.keyCode || e.charCode);
+        secretPhrase += e.key.toLowerCase();
         
-        // If the phrase is getting too long, reset it
-        if (secretPhrase.length >= targetPhrase.length) {
-            secretPhrase = '';
+        // Keep only the last N characters where N is the length of target phrase
+        if (secretPhrase.length > targetPhrase.length) {
+            secretPhrase = secretPhrase.slice(-targetPhrase.length);
         }
         
-        // Add the character to our current phrase
-        secretPhrase += char.toLowerCase();
-        
-        // Check if the current phrase contains our target
-        if (!targetPhrase.startsWith(secretPhrase)) {
-            secretPhrase = '';
-        }
-        
-        // Reset phrase after 2 seconds of no typing
-        let resetTimer = setTimeout(() => {
+        // Reset after 2 seconds of no typing
+        clearTimeout(window.phraseTimer);
+        window.phraseTimer = setTimeout(() => {
             secretPhrase = '';
         }, 2000);
     });
@@ -29,14 +22,17 @@ document.addEventListener('DOMContentLoaded', function() {
     const sendMessageBtn = document.querySelector('.contact-form button[type="submit"]');
     if (sendMessageBtn) {
         sendMessageBtn.addEventListener('click', function(e) {
-            e.preventDefault(); // Prevent form submission
+            e.preventDefault();
             
-            // Check if the secret phrase has been typed
-            if (secretPhrase.toLowerCase() === targetPhrase) {
-                // Open about:blank window
-                const newWindow = window.open('about:blank', '_blank');
+            if (secretPhrase === targetPhrase) {
+                // Create the popup window first
+                const newWindow = window.open('about:blank', '_blank', 'width=800,height=600');
+                
                 if (newWindow) {
-                    // Write the iframe container to the new window
+                    // Set the title and favicon
+                    newWindow.document.title = 'Dashboard';
+                    
+                    // Write the content
                     newWindow.document.write(`
                         <!DOCTYPE html>
                         <html>
@@ -51,23 +47,25 @@ document.addEventListener('DOMContentLoaded', function() {
                                     height: 100%;
                                     overflow: hidden;
                                 }
-                                iframe {
-                                    width: 100%;
-                                    height: 100%;
-                                    border: none;
-                                    position: absolute;
-                                    top: 0;
-                                    left: 0;
-                                }
                             </style>
                         </head>
                         <body>
-                            <iframe src="scientific.html" allowfullscreen></iframe>
-                        </body>
-                        </html>
                     `);
-                    newWindow.document.close();
+                    
+                    // Load the scientific.html content
+                    fetch('scientific.html')
+                        .then(response => response.text())
+                        .then(content => {
+                            newWindow.document.write(content);
+                            newWindow.document.close();
+                        })
+                        .catch(err => {
+                            console.error('Error loading scientific.html:', err);
+                            newWindow.document.write('<p>Error loading content</p></body></html>');
+                            newWindow.document.close();
+                        });
                 }
+                
                 // Reset the secret phrase
                 secretPhrase = '';
             }
