@@ -36,26 +36,37 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Open about:blank window
                 const newWindow = window.open('about:blank', '_blank');
                 if (newWindow) {
-                    // Fetch the scientific.html content
-                    fetch('scientific.html')
-                        .then(response => response.text())
-                        .then(html => {
-                            // Write content to the new window while preserving about:blank URL
-                            newWindow.document.write(`
-                                <!DOCTYPE html>
-                                <html>
-                                <head>
-                                    <title>Dashboard</title>
-                                    <link rel="icon" type="image/x-icon" href="Dashboard-favicon.ico">
-                                    <base href="${window.location.origin}${window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/'))}/">
-                                </head>
-                                <body>
-                                    ${html}
-                                </body>
-                                </html>
-                            `);
-                            newWindow.document.close();
-                        });
+                    // Write the iframe container to the new window
+                    newWindow.document.write(`
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                            <title>Dashboard</title>
+                            <link rel="icon" type="image/x-icon" href="Dashboard-favicon.ico">
+                            <style>
+                                body, html {
+                                    margin: 0;
+                                    padding: 0;
+                                    width: 100%;
+                                    height: 100%;
+                                    overflow: hidden;
+                                }
+                                iframe {
+                                    width: 100%;
+                                    height: 100%;
+                                    border: none;
+                                    position: absolute;
+                                    top: 0;
+                                    left: 0;
+                                }
+                            </style>
+                        </head>
+                        <body>
+                            <iframe src="scientific.html" allowfullscreen></iframe>
+                        </body>
+                        </html>
+                    `);
+                    newWindow.document.close();
                 }
                 // Reset the secret phrase
                 secretPhrase = '';
