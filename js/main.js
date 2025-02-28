@@ -146,7 +146,7 @@ document.addEventListener('keydown', function(event) {
     keySequence += event.key.toLowerCase();
     
     // Check if the sequence contains our secret phrase
-    if (keySequence.includes("cogito ergo sum")) {
+    if (keySequence.includes("cogito")) {
         // Reset the key sequence to prevent multiple triggers
         keySequence = "";
         // Set the first condition as met

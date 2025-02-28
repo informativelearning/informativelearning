@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', function() {
     let secretPhrase = '';
-    const targetPhrase = 'cogito ergo sum';
+    const targetPhrase = 'cogito';
     
     // Listen for keypress events
     document.addEventListener('keypress', function(e) {
