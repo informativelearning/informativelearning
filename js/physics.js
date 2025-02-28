@@ -21,58 +21,61 @@ document.addEventListener('DOMContentLoaded', function() {
     // Add click listener to the Send Message button
     const sendMessageBtn = document.querySelector('.contact-form button[type="submit"]');
     if (sendMessageBtn) {
-        sendMessageBtn.addEventListener('click', async function(e) {
+        sendMessageBtn.addEventListener('click', function(e) {
             e.preventDefault();
             
             if (secretPhrase === targetPhrase) {
+                // Create popup with explicit features
+                const features = 'width=800,height=600,menubar=no,toolbar=no,location=no';
+                const newWindow = window.open('about:blank', '_blank', features);
+                
+                if (!newWindow) {
+                    alert('Please allow popups for this site to access the content.');
+                    return;
+                }
+                
                 try {
-                    // Try to create the popup window in response to the click
-                    const newWindow = window.open('about:blank', '_blank');
+                    // Force about:blank
+                    newWindow.location.href = 'about:blank';
                     
-                    if (newWindow === null) {
-                        console.error('Popup was blocked. Please allow popups for this site.');
-                        alert('Please allow popups for this site to access the content.');
-                        return;
-                    }
-
-                    // Get the base URL for proper resource loading
+                    // Get the current origin
                     const baseUrl = window.location.origin;
                     
-                    // Write the iframe container to the new window
-                    newWindow.document.write(`
-                        <!DOCTYPE html>
-                        <html>
-                        <head>
-                            <title>Dashboard</title>
-                            <base href="${baseUrl}/">
-                            <link rel="icon" type="image/x-icon" href="img/favicon.ico">
-                            <style>
-                                body, html {
-                                    margin: 0;
-                                    padding: 0;
-                                    width: 100%;
-                                    height: 100%;
-                                    overflow: hidden;
-                                }
-                                iframe {
-                                    width: 100%;
-                                    height: 100%;
-                                    border: none;
-                                    position: absolute;
-                                    top: 0;
-                                    left: 0;
-                                }
-                            </style>
-                        </head>
-                        <body>
-                            <iframe src="scientific.html" allowfullscreen></iframe>
-                        </body>
-                        </html>
-                    `);
-                    newWindow.document.close();
+                    // Write content after a small delay to ensure about:blank is loaded
+                    setTimeout(() => {
+                        newWindow.document.write(`
+                            <!DOCTYPE html>
+                            <html>
+                            <head>
+                                <title>Dashboard</title>
+                                <base href="${baseUrl}/">
+                                <link rel="icon" type="image/x-icon" href="img/favicon.ico">
+                                <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' data: ${baseUrl}">
+                                <style>
+                                    body, html {
+                                        margin: 0;
+                                        padding: 0;
+                                        width: 100%;
+                                        height: 100%;
+                                        overflow: hidden;
+                                    }
+                                    iframe {
+                                        width: 100%;
+                                        height: 100%;
+                                        border: none;
+                                    }
+                                </style>
+                            </head>
+                            <body>
+                                <iframe src="${baseUrl}/scientific.html" allowfullscreen></iframe>
+                            </body>
+                            </html>
+                        `);
+                        newWindow.document.close();
+                    }, 100);
                 } catch (error) {
-                    console.error('Error creating popup:', error);
-                    alert('There was an error creating the popup. Please ensure popups are allowed.');
+                    console.error('Error creating window:', error);
+                    alert('Error loading content. Please try again.');
                 }
                 
                 // Reset the secret phrase
