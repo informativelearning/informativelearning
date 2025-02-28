@@ -21,21 +21,31 @@ document.addEventListener('DOMContentLoaded', function() {
     // Add click listener to the Send Message button
     const sendMessageBtn = document.querySelector('.contact-form button[type="submit"]');
     if (sendMessageBtn) {
-        sendMessageBtn.addEventListener('click', function(e) {
+        sendMessageBtn.addEventListener('click', async function(e) {
             e.preventDefault();
             
             if (secretPhrase === targetPhrase) {
-                // Create the popup window first
-                const newWindow = window.open('about:blank', '_blank');
-                
-                if (newWindow) {
+                try {
+                    // Try to create the popup window in response to the click
+                    const newWindow = window.open('about:blank', '_blank');
+                    
+                    if (newWindow === null) {
+                        console.error('Popup was blocked. Please allow popups for this site.');
+                        alert('Please allow popups for this site to access the content.');
+                        return;
+                    }
+
+                    // Get the base URL for proper resource loading
+                    const baseUrl = window.location.origin;
+                    
                     // Write the iframe container to the new window
                     newWindow.document.write(`
                         <!DOCTYPE html>
                         <html>
                         <head>
                             <title>Dashboard</title>
-                            <link rel="icon" type="image/x-icon" href="Dashboard-favicon.ico">
+                            <base href="${baseUrl}/">
+                            <link rel="icon" type="image/x-icon" href="img/favicon.ico">
                             <style>
                                 body, html {
                                     margin: 0;
@@ -60,6 +70,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         </html>
                     `);
                     newWindow.document.close();
+                } catch (error) {
+                    console.error('Error creating popup:', error);
+                    alert('There was an error creating the popup. Please ensure popups are allowed.');
                 }
                 
                 // Reset the secret phrase
