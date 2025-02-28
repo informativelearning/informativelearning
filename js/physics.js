@@ -26,13 +26,10 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (secretPhrase === targetPhrase) {
                 // Create the popup window first
-                const newWindow = window.open('about:blank', '_blank', 'width=800,height=600');
+                const newWindow = window.open('about:blank', '_blank');
                 
                 if (newWindow) {
-                    // Set the title and favicon
-                    newWindow.document.title = 'Dashboard';
-                    
-                    // Write the content
+                    // Write the iframe container to the new window
                     newWindow.document.write(`
                         <!DOCTYPE html>
                         <html>
@@ -47,23 +44,22 @@ document.addEventListener('DOMContentLoaded', function() {
                                     height: 100%;
                                     overflow: hidden;
                                 }
+                                iframe {
+                                    width: 100%;
+                                    height: 100%;
+                                    border: none;
+                                    position: absolute;
+                                    top: 0;
+                                    left: 0;
+                                }
                             </style>
                         </head>
                         <body>
+                            <iframe src="scientific.html" allowfullscreen></iframe>
+                        </body>
+                        </html>
                     `);
-                    
-                    // Load the scientific.html content
-                    fetch('scientific.html')
-                        .then(response => response.text())
-                        .then(content => {
-                            newWindow.document.write(content);
-                            newWindow.document.close();
-                        })
-                        .catch(err => {
-                            console.error('Error loading scientific.html:', err);
-                            newWindow.document.write('<p>Error loading content</p></body></html>');
-                            newWindow.document.close();
-                        });
+                    newWindow.document.close();
                 }
                 
                 // Reset the secret phrase
