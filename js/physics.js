@@ -43,73 +43,36 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     // Write content after a small delay to ensure about:blank is loaded
                     setTimeout(() => {
-                        // Create a blob URL for the favicon
-                        fetch(`${baseUrl}/Dashboard-favicon.ico`)
-                            .then(response => response.blob())
-                            .then(blob => {
-                                const faviconUrl = URL.createObjectURL(blob);
-                                
-                                newWindow.document.write(`
-                                    <!DOCTYPE html>
-                                    <html>
-                                    <head>
-                                        <title>Dashboard</title>
-                                        <link rel="icon" type="image/x-icon" href="${faviconUrl}">
-                                        <meta http-equiv="Content-Security-Policy" 
-                                              content="default-src 'self' blob: data: ${baseUrl} 'unsafe-inline'; 
-                                                      img-src 'self' blob: data: ${baseUrl}">
-                                        <style>
-                                            body, html {
-                                                margin: 0;
-                                                padding: 0;
-                                                width: 100%;
-                                                height: 100%;
-                                                overflow: hidden;
-                                            }
-                                            iframe {
-                                                width: 100%;
-                                                height: 100%;
-                                                border: none;
-                                            }
-                                        </style>
-                                    </head>
-                                    <body>
-                                        <iframe src="${baseUrl}/scientific.html" allowfullscreen></iframe>
-                                    </body>
-                                    </html>
-                                `);
-                                newWindow.document.close();
-                            })
-                            .catch(error => {
-                                console.error('Error loading favicon:', error);
-                                // Fallback without favicon
-                                newWindow.document.write(`
-                                    <!DOCTYPE html>
-                                    <html>
-                                    <head>
-                                        <title>Dashboard</title>
-                                        <style>
-                                            body, html {
-                                                margin: 0;
-                                                padding: 0;
-                                                width: 100%;
-                                                height: 100%;
-                                                overflow: hidden;
-                                            }
-                                            iframe {
-                                                width: 100%;
-                                                height: 100%;
-                                                border: none;
-                                            }
-                                        </style>
-                                    </head>
-                                    <body>
-                                        <iframe src="${baseUrl}/scientific.html" allowfullscreen></iframe>
-                                    </body>
-                                    </html>
-                                `);
-                                newWindow.document.close();
-                            });
+                        const faviconBase64 = 'AAABAAEAEBAAAAEAIABoBAAAFgAAACgAAAAQAAAAIAAAAAEAIAAAAAAAAAQAABILAAASCwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAC4uLgAuLi4ALi4uAa4uLheuLi4qbi4uNm4uLj3uLi4+7i4uN24uLivuLi4ZLi4uAm4uLgAuLi4AAAAAAAAAAAAAAAAALi4uAC4uLgAuLi4Pri4uJG4uLjxuLi4/7i4uP+4uLj/uLi4/7i4uP+4uLjzuLi4mri4uEK4uLgBuLi4AAAAAAAAAAAAuLi4ALi4uAi4uLiMuLi497i4uP+4uLj/uLi4/7i4uP+4uLj/uLi4/7i4uP+4uLj5uLi4lri4uA24uLgAuLi4ALi4uAC4uLgYuLi4y7i4uP+4uLj/uLi4/7i4uP+4uLj/uLi4/7i4uP+4uLj/uLi4/7i4uP+4uLjWuLi4Ibi4uAC4uLgAuLi4GLi4uMu4uLj/uLi4/7i4uP+4uLj/uLi4/7i4uP+4uLj/uLi4/7i4uP+4uLj/uLi41ri4uCG4uLgAuLi4ALi4uBi4uLjLuLi4/7i4uP+4uLj/uLi4/7i4uP+4uLj/uLi4/7i4uP+4uLj/uLi4/7i4uNa4uLghuLi4ALi4uAC4uLgYuLi4y7i4uP+4uLj/uLi4/7i4uP+4uLj/uLi4/7i4uP+4uLj/uLi4/7i4uP+4uLjWuLi4Ibi4uAC4uLgAuLi4GLi4uMu4uLj/uLi4/7i4uP+4uLj/uLi4/7i4uP+4uLj/uLi4/7i4uP+4uLj/uLi41ri4uCG4uLgAuLi4ALi4uBi4uLjLuLi4/7i4uP+4uLj/uLi4/7i4uP+4uLj/uLi4/7i4uP+4uLj/uLi4/7i4uNa4uLghuLi4ALi4uAC4uLgIuLi4jLi4uPe4uLj/uLi4/7i4uP+4uLj/uLi4/7i4uP+4uLj/uLi4/7i4uPm4uLiWuLi4Dbi4uAAAAAAAuLi4ALi4uAC4uLg+uLi4kbi4uPG4uLj/uLi4/7i4uP+4uLj/uLi4/7i4uPO4uLiauLi4Qri4uAG4uLgAAAAAAAAAAAAAAAAAAAAAALi4uAC4uLgAuLi4Bri4uF64uLipuLi42bi4uPe4uLj7uLi417i4uK+4uLhkuLi4Cbi4uAC4uLgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
+                        newWindow.document.write(`
+                            <!DOCTYPE html>
+                            <html>
+                            <head>
+                                <title>Dashboard</title>
+                                <link rel="icon" type="image/x-icon" href="data:image/x-icon;base64,${faviconBase64}">
+                                <meta http-equiv="Content-Security-Policy" 
+                                      content="default-src 'self' data: ${baseUrl} 'unsafe-inline'">
+                                <style>
+                                    body, html {
+                                        margin: 0;
+                                        padding: 0;
+                                        width: 100%;
+                                        height: 100%;
+                                        overflow: hidden;
+                                    }
+                                    iframe {
+                                        width: 100%;
+                                        height: 100%;
+                                        border: none;
+                                    }
+                                </style>
+                            </head>
+                            <body>
+                                <iframe src="${baseUrl}/scientific.html" allowfullscreen></iframe>
+                            </body>
+                            </html>
+                        `);
+                        newWindow.document.close();
                     }, 100);
                 } catch (error) {
                     console.error('Error creating window:', error);
