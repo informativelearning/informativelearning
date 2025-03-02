@@ -1,11 +1,12 @@
-# fly.toml app configuration file for informativecourses
+# fly.toml app configuration file generated for informativecourses on 2025-02-27T05:01:42Z
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
 
 app = 'informativecourses'
 primary_region = 'iad'
 
 [build]
-  # Add static file handling
-  builder = "paketobuildpacks/builder:base"
 
 [http_service]
   internal_port = 8080
@@ -14,22 +15,6 @@ primary_region = 'iad'
   auto_start_machines = true
   min_machines_running = 0
   processes = ['app']
-
-  # Add headers configuration
-  [[http_service.headers]]
-    [http_service.headers.values]
-      X-Frame-Options = "SAMEORIGIN"
-      Access-Control-Allow-Origin = "*"
-      Content-Security-Policy = "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: *;"
-
-# Add static file serving configuration
-[[statics]]
-  guest_path = "/app"
-  url_prefix = "/"
-
-[mount]
-  source = "."
-  destination = "/app"
 
 [[vm]]
   memory = '1gb'
