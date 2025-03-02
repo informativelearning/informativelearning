@@ -25,57 +25,41 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             
             if (secretPhrase === targetPhrase) {
-                // Create popup with explicit features
-                const features = 'width=800,height=600,menubar=no,toolbar=no,location=no';
-                const newWindow = window.open('about:blank', '_blank', features);
-                
-                if (!newWindow) {
+                const win = window.open();
+                if (!win) {
                     alert('Please allow popups for this site to access the content.');
                     return;
                 }
-                
+
                 try {
-                    // Force about:blank
-                    newWindow.location.href = 'about:blank';
+                    // Set up the basic document structure
+                    win.document.body.style.margin = '0';
+                    win.document.body.style.height = '100vh';
                     
-                    // Get the current origin
-                    const baseUrl = window.location.origin;
+                    // Set the title
+                    win.document.title = 'Dashboard';
                     
-                    // Write content after a small delay to ensure about:blank is loaded
-                    setTimeout(() => {
-                        const faviconBase64 = 'AAABAAEAEBAAAAEAIABoBAAAFgAAACgAAAAQAAAAIAAAAAEAIAAAAAAAAAQAABILAAASCwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAC4uLgAuLi4ALi4uAa4uLheuLi4qbi4uNm4uLj3uLi4+7i4uN24uLivuLi4ZLi4uAm4uLgAuLi4AAAAAAAAAAAAAAAAALi4uAC4uLgAuLi4Pri4uJG4uLjxuLi4/7i4uP+4uLj/uLi4/7i4uP+4uLjzuLi4mri4uEK4uLgBuLi4AAAAAAAAAAAAuLi4ALi4uAi4uLiMuLi497i4uP+4uLj/uLi4/7i4uP+4uLj/uLi4/7i4uP+4uLj5uLi4lri4uA24uLgAuLi4ALi4uAC4uLgYuLi4y7i4uP+4uLj/uLi4/7i4uP+4uLj/uLi4/7i4uP+4uLj/uLi4/7i4uP+4uLjWuLi4Ibi4uAC4uLgAuLi4GLi4uMu4uLj/uLi4/7i4uP+4uLj/uLi4/7i4uP+4uLj/uLi4/7i4uP+4uLj/uLi41ri4uCG4uLgAuLi4ALi4uBi4uLjLuLi4/7i4uP+4uLj/uLi4/7i4uP+4uLj/uLi4/7i4uP+4uLj/uLi4/7i4uNa4uLghuLi4ALi4uAC4uLgYuLi4y7i4uP+4uLj/uLi4/7i4uP+4uLj/uLi4/7i4uP+4uLj/uLi4/7i4uP+4uLjWuLi4Ibi4uAC4uLgAuLi4GLi4uMu4uLj/uLi4/7i4uP+4uLj/uLi4/7i4uP+4uLj/uLi4/7i4uP+4uLj/uLi41ri4uCG4uLgAuLi4ALi4uBi4uLjLuLi4/7i4uP+4uLj/uLi4/7i4uP+4uLj/uLi4/7i4uP+4uLj/uLi4/7i4uNa4uLghuLi4ALi4uAC4uLgIuLi4jLi4uPe4uLj/uLi4/7i4uP+4uLj/uLi4/7i4uP+4uLj/uLi4/7i4uPm4uLiWuLi4Dbi4uAAAAAAAuLi4ALi4uAC4uLg+uLi4kbi4uPG4uLj/uLi4/7i4uP+4uLj/uLi4/7i4uPO4uLiauLi4Qri4uAG4uLgAAAAAAAAAAAAAAAAAAAAAALi4uAC4uLgAuLi4Bri4uF64uLipuLi42bi4uPe4uLj7uLi417i4uK+4uLhkuLi4Cbi4uAC4uLgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
-                        newWindow.document.write(`
-                            <!DOCTYPE html>
-                            <html>
-                            <head>
-                                <title>Dashboard</title>
-                                <link rel="icon" type="image/x-icon" href="data:image/x-icon;base64,${faviconBase64}">
-                                <meta http-equiv="Content-Security-Policy" 
-                                      content="default-src 'self' data: ${baseUrl} 'unsafe-inline'">
-                                <style>
-                                    body, html {
-                                        margin: 0;
-                                        padding: 0;
-                                        width: 100%;
-                                        height: 100%;
-                                        overflow: hidden;
-                                    }
-                                    iframe {
-                                        width: 100%;
-                                        height: 100%;
-                                        border: none;
-                                    }
-                                </style>
-                            </head>
-                            <body>
-                                <iframe src="${baseUrl}/scientific.html" allowfullscreen></iframe>
-                            </body>
-                            </html>
-                        `);
-                        newWindow.document.close();
-                    }, 100);
+                    // Create and set the favicon
+                    const favicon = win.document.createElement('link');
+                    favicon.rel = 'icon';
+                    favicon.type = 'image/x-icon';
+                    favicon.href = window.location.origin + '/Dashboard-favicon.ico';
+                    win.document.head.appendChild(favicon);
+                    
+                    // Create and append the iframe
+                    const iframe = win.document.createElement('iframe');
+                    iframe.style.border = 'none';
+                    iframe.style.width = '100%';
+                    iframe.style.height = '100%';
+                    iframe.style.margin = '0';
+                    iframe.referrerPolicy = 'no-referrer';
+                    iframe.allow = 'fullscreen';
+                    iframe.src = window.location.origin + '/scientific.html';
+                    
+                    win.document.body.appendChild(iframe);
                 } catch (error) {
                     console.error('Error creating window:', error);
+                    win.close();
                     alert('Error loading content. Please try again.');
                 }
                 
