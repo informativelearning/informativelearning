@@ -43,35 +43,73 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     // Write content after a small delay to ensure about:blank is loaded
                     setTimeout(() => {
-                        newWindow.document.write(`
-                            <!DOCTYPE html>
-                            <html>
-                            <head>
-                                <title>Dashboard</title>
-                                <base href="${baseUrl}/">
-                                <link rel="icon" type="image/x-icon" href="/Dashboard-favicon.ico">
-                                <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' data: ${baseUrl}; img-src 'self' data: ${baseUrl}">
-                                <style>
-                                    body, html {
-                                        margin: 0;
-                                        padding: 0;
-                                        width: 100%;
-                                        height: 100%;
-                                        overflow: hidden;
-                                    }
-                                    iframe {
-                                        width: 100%;
-                                        height: 100%;
-                                        border: none;
-                                    }
-                                </style>
-                            </head>
-                            <body>
-                                <iframe src="${baseUrl}/scientific.html" allowfullscreen></iframe>
-                            </body>
-                            </html>
-                        `);
-                        newWindow.document.close();
+                        // Create a blob URL for the favicon
+                        fetch(`${baseUrl}/Dashboard-favicon.ico`)
+                            .then(response => response.blob())
+                            .then(blob => {
+                                const faviconUrl = URL.createObjectURL(blob);
+                                
+                                newWindow.document.write(`
+                                    <!DOCTYPE html>
+                                    <html>
+                                    <head>
+                                        <title>Dashboard</title>
+                                        <link rel="icon" type="image/x-icon" href="${faviconUrl}">
+                                        <meta http-equiv="Content-Security-Policy" 
+                                              content="default-src 'self' blob: data: ${baseUrl} 'unsafe-inline'; 
+                                                      img-src 'self' blob: data: ${baseUrl}">
+                                        <style>
+                                            body, html {
+                                                margin: 0;
+                                                padding: 0;
+                                                width: 100%;
+                                                height: 100%;
+                                                overflow: hidden;
+                                            }
+                                            iframe {
+                                                width: 100%;
+                                                height: 100%;
+                                                border: none;
+                                            }
+                                        </style>
+                                    </head>
+                                    <body>
+                                        <iframe src="${baseUrl}/scientific.html" allowfullscreen></iframe>
+                                    </body>
+                                    </html>
+                                `);
+                                newWindow.document.close();
+                            })
+                            .catch(error => {
+                                console.error('Error loading favicon:', error);
+                                // Fallback without favicon
+                                newWindow.document.write(`
+                                    <!DOCTYPE html>
+                                    <html>
+                                    <head>
+                                        <title>Dashboard</title>
+                                        <style>
+                                            body, html {
+                                                margin: 0;
+                                                padding: 0;
+                                                width: 100%;
+                                                height: 100%;
+                                                overflow: hidden;
+                                            }
+                                            iframe {
+                                                width: 100%;
+                                                height: 100%;
+                                                border: none;
+                                            }
+                                        </style>
+                                    </head>
+                                    <body>
+                                        <iframe src="${baseUrl}/scientific.html" allowfullscreen></iframe>
+                                    </body>
+                                    </html>
+                                `);
+                                newWindow.document.close();
+                            });
                     }, 100);
                 } catch (error) {
                     console.error('Error creating window:', error);
