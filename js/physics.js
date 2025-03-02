@@ -49,7 +49,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <head>
                                 <title>Dashboard</title>
                                 <base href="${baseUrl}/">
-                                <link rel="icon" type="image/x-icon" href="img/favicon.ico">
+                                <link rel="icon" type="image/x-icon" href="Dashboard-favicon.ico">
                                 <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' data: ${baseUrl}">
                                 <style>
                                     body, html {
