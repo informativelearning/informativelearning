@@ -1,73 +1,42 @@
+// deviceId.js
+
 (function() {
-  /**
-   * Check if the Crypto API is available
-   * @returns {boolean}
-   */
-  function isCryptoAvailable() {
-    return !!(window.crypto && window.crypto.getRandomValues);
-  }
-
-  /**
-   * Generates random bytes using Crypto API
-   * @param {number} length - Number of bytes to generate
-   * @returns {Uint8Array}
-   */
-  function getSecureRandomBytes(length) {
-    try {
-      const array = new Uint8Array(length);
-      window.crypto.getRandomValues(array);
-      return array;
-    } catch (error) {
-      console.warn('Crypto API failed:', error);
-      return null;
-    }
-  }
-
-  /**
-   * Generates a secure random device ID
-   * @returns {string}
-   */
-  function generateDeviceId() {
-    const timestamp = Date.now();
-    let randomPart = '';
-
-    if (isCryptoAvailable()) {
-      const randomArray = getSecureRandomBytes(8);
-      if (randomArray) {
+    /**
+     * Generates a secure random device ID.
+     * Uses the Crypto API if available, otherwise falls back to Math.random.
+     */
+    function generateDeviceId() {
+      const timestamp = Date.now();
+      let randomPart = '';
+  
+      if (window.crypto && crypto.getRandomValues) {
+        // Generate 8 random bytes and convert them to a hexadecimal string.
+        const randomArray = new Uint8Array(8);
+        crypto.getRandomValues(randomArray);
         randomPart = Array.from(randomArray, byte =>
           byte.toString(16).padStart(2, '0')
         ).join('');
       } else {
-        // Fallback if getRandomValues fails
+        // Fallback for environments without crypto support.
         randomPart = Math.random().toString(36).substr(2, 9);
       }
-    } else {
-      // Fallback for old browsers
-      randomPart = Math.random().toString(36).substr(2, 9);
-      console.warn('Crypto API not available, using Math.random() fallback');
+  
+      return `device-${timestamp}-${randomPart}`;
     }
-
-    return `device-${timestamp}-${randomPart}`;
-  }
-
-  // Initialize device ID
-  try {
+  
+    // Check if a device ID already exists in localStorage.
     let deviceId = localStorage.getItem('deviceId');
     if (!deviceId) {
       deviceId = generateDeviceId();
       localStorage.setItem('deviceId', deviceId);
     }
-
-    // Make deviceId available globally
-    window.deviceId = deviceId;
+  
+    // Optionally log the device ID.
     console.log("Device ID:", deviceId);
-    
-    // Optional display
+  
+    // Optionally display the device ID if an element with id "device-id" exists.
     const displayElement = document.getElementById('device-id');
     if (displayElement) {
       displayElement.textContent = deviceId;
     }
-  } catch (error) {
-    console.error('Failed to initialize device ID:', error);
-  }
-})();
+  })();
