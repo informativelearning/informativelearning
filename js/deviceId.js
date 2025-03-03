@@ -1,135 +1,67 @@
 // deviceId.js
 
 (function() {
-    const STORAGE_KEY = 'deviceId';
-    const VERIFIED_KEY = 'verified';
-    const ACCESS_WINDOW_KEY = 'accessWindow';
-    
-    class DeviceManager {
-        constructor() {
-            this.deviceId = null;
-            this.verificationStatus = false;
-            this.lastAccessTime = null;
-        }
-
-        init() {
-            try {
-                this.deviceId = this.getOrCreateDeviceId();
-                this.verificationStatus = this.loadVerificationStatus();
-                this.lastAccessTime = this.loadLastAccessTime();
-                this.updateUI();
-                console.debug('Device Manager initialized:', { 
-                    deviceId: this.deviceId,
-                    verified: this.verificationStatus 
-                });
-            } catch (error) {
-                console.error('Failed to initialize Device Manager:', error);
+    function generateId() {
+        try {
+            const timestamp = Date.now();
+            let random = '';
+            
+            if (window.crypto && crypto.getRandomValues) {
+                const array = new Uint8Array(4);
+                crypto.getRandomValues(array);
+                random = Array.from(array, b => b.toString(16).padStart(2, '0')).join('');
+            } else {
+                random = Math.random().toString(36).substring(2, 10);
             }
+            
+            return `DEV-${timestamp}-${random}`;
+        } catch (error) {
+            console.error('Error generating ID:', error);
+            return `DEV-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         }
+    }
 
-        generateDeviceId() {
-            try {
-                const timestamp = Date.now();
-                let randomPart = '';
-                
-                if (window.crypto && crypto.getRandomValues) {
-                    const randomArray = new Uint8Array(8);
-                    crypto.getRandomValues(randomArray);
-                    randomPart = Array.from(randomArray, byte =>
-                        byte.toString(16).padStart(2, '0')
-                    ).join('');
-                } else {
-                    randomPart = Math.random().toString(36).substr(2, 9);
-                }
-                
-                return `MSL-${timestamp}-${randomPart}`;
-            } catch (error) {
-                console.error('Error generating device ID:', error);
-                return `MSL-${Date.now()}-fallback`;
-            }
-        }
-
-        getOrCreateDeviceId() {
-            let deviceId = localStorage.getItem(STORAGE_KEY);
+    function initDeviceId() {
+        try {
+            // Get or create device ID
+            let deviceId = localStorage.getItem('deviceId');
             if (!deviceId) {
-                deviceId = this.generateDeviceId();
-                localStorage.setItem(STORAGE_KEY, deviceId);
-            }
-            return deviceId;
-        }
-
-        loadVerificationStatus() {
-            return localStorage.getItem(VERIFIED_KEY) === 'true';
-        }
-
-        loadLastAccessTime() {
-            const time = localStorage.getItem(ACCESS_WINDOW_KEY);
-            return time ? parseInt(time, 10) : null;
-        }
-
-        updateUI() {
-            const displayElement = document.getElementById('device-id');
-            if (displayElement) {
-                displayElement.textContent = this.deviceId;
-                displayElement.dataset.verified = this.verificationStatus;
+                deviceId = generateId();
+                localStorage.setItem('deviceId', deviceId);
             }
 
+            // Update UI elements
+            const idElement = document.getElementById('device-id');
             const statusElement = document.getElementById('verification-status');
+            const accessElement = document.getElementById('access-time');
+
+            if (idElement) idElement.textContent = deviceId;
+            if (statusElement) statusElement.textContent = 'Active';
+            if (accessElement) accessElement.textContent = new Date().toLocaleString();
+
+            // Add verification status
+            const isVerified = localStorage.getItem('verified') === 'true';
             if (statusElement) {
-                statusElement.textContent = this.verificationStatus ? 'Verified' : 'Unverified';
-                statusElement.className = this.verificationStatus ? 'status-verified' : 'status-unverified';
-            }
-        }
-
-        // Admin Methods
-        verify(adminKey) {
-            if (this.validateAdminKey(adminKey)) {
-                this.verificationStatus = true;
-                localStorage.setItem(VERIFIED_KEY, 'true');
-                this.updateUI();
-                return true;
-            }
-            return false;
-        }
-
-        validateAdminKey(key) {
-            // Implement your validation logic here
-            return key === 'your-admin-key';
-        }
-
-        checkAccessWindow() {
-            const now = Date.now();
-            const lastAccess = this.lastAccessTime;
-            const windowSize = 30 * 60 * 1000; // 30 minutes
-            const cooldown = 3 * 60 * 60 * 1000; // 3 hours
-
-            if (!lastAccess || (now - lastAccess) > cooldown) {
-                this.lastAccessTime = now;
-                localStorage.setItem(ACCESS_WINDOW_KEY, now.toString());
-                return true;
+                statusElement.textContent = isVerified ? 'Verified' : 'Unverified';
+                statusElement.className = isVerified ? 'status-verified' : 'status-unverified';
             }
 
-            return (now - lastAccess) < windowSize;
-        }
-
-        // Public API
-        static getInstance() {
-            if (!this.instance) {
-                this.instance = new DeviceManager();
-            }
-            return this.instance;
+            console.log('Device ID initialized:', deviceId);
+        } catch (error) {
+            console.error('Failed to initialize device ID:', error);
+            // Show error in UI
+            const elements = ['device-id', 'verification-status', 'access-time'];
+            elements.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) element.textContent = 'Error loading';
+            });
         }
     }
 
-    // Initialize when DOM is ready
+    // Initialize when DOM is fully loaded
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => {
-            DeviceManager.getInstance().init();
-        });
+        document.addEventListener('DOMContentLoaded', initDeviceId);
     } else {
-        DeviceManager.getInstance().init();
+        initDeviceId();
     }
-
-    // Make device manager available globally
-    window.deviceManager = DeviceManager.getInstance();
 })();
