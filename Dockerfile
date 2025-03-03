@@ -1,7 +1,7 @@
 FROM pierrezemb/gostatic
 
 # Explicitly copy favicon first
-COPY Dashboard-favicon.ico /srv/http/Dashboard-favicon.ico
+COPY favicon.ico /srv/http/favicon.ico
 
 # Then copy everything else
 COPY . /srv/http/
