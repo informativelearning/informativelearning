@@ -1,67 +1,77 @@
-// deviceId.js
+console.log('DeviceID script starting...'); // Debug log
 
 (function() {
     function generateId() {
         try {
             const timestamp = Date.now();
-            let random = '';
-            
-            if (window.crypto && crypto.getRandomValues) {
-                const array = new Uint8Array(4);
-                crypto.getRandomValues(array);
-                random = Array.from(array, b => b.toString(16).padStart(2, '0')).join('');
-            } else {
-                random = Math.random().toString(36).substring(2, 10);
-            }
-            
-            return `DEV-${timestamp}-${random}`;
+            let random = Math.random().toString(36).substring(2, 10);
+            return `MSL-${timestamp}-${random}`;
         } catch (error) {
             console.error('Error generating ID:', error);
-            return `DEV-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            return null;
         }
     }
 
-    function initDeviceId() {
+    function updateUI(deviceId) {
         try {
-            // Get or create device ID
-            let deviceId = localStorage.getItem('deviceId');
-            if (!deviceId) {
-                deviceId = generateId();
-                localStorage.setItem('deviceId', deviceId);
-            }
-
-            // Update UI elements
+            // Get UI elements
             const idElement = document.getElementById('device-id');
             const statusElement = document.getElementById('verification-status');
             const accessElement = document.getElementById('access-time');
 
-            if (idElement) idElement.textContent = deviceId;
-            if (statusElement) statusElement.textContent = 'Active';
-            if (accessElement) accessElement.textContent = new Date().toLocaleString();
+            console.log('Found elements:', {
+                idElement: !!idElement,
+                statusElement: !!statusElement,
+                accessElement: !!accessElement
+            });
 
-            // Add verification status
-            const isVerified = localStorage.getItem('verified') === 'true';
-            if (statusElement) {
-                statusElement.textContent = isVerified ? 'Verified' : 'Unverified';
-                statusElement.className = isVerified ? 'status-verified' : 'status-unverified';
+            // Update device ID
+            if (idElement) {
+                idElement.textContent = deviceId || 'Error';
             }
 
-            console.log('Device ID initialized:', deviceId);
+            // Update status
+            if (statusElement) {
+                statusElement.textContent = 'Active';
+                statusElement.className = 'status-verified';
+            }
+
+            // Update access time
+            if (accessElement) {
+                accessElement.textContent = new Date().toLocaleString();
+            }
         } catch (error) {
-            console.error('Failed to initialize device ID:', error);
-            // Show error in UI
-            const elements = ['device-id', 'verification-status', 'access-time'];
-            elements.forEach(id => {
-                const element = document.getElementById(id);
-                if (element) element.textContent = 'Error loading';
-            });
+            console.error('Error updating UI:', error);
         }
     }
 
-    // Initialize when DOM is fully loaded
+    function init() {
+        console.log('Initializing device ID...'); // Debug log
+        try {
+            // Try to get existing device ID
+            let deviceId = localStorage.getItem('deviceId');
+            
+            // Generate new ID if none exists
+            if (!deviceId) {
+                deviceId = generateId();
+                if (deviceId) {
+                    localStorage.setItem('deviceId', deviceId);
+                }
+            }
+
+            console.log('Device ID:', deviceId); // Debug log
+            updateUI(deviceId);
+
+        } catch (error) {
+            console.error('Error in init:', error);
+            updateUI(null);
+        }
+    }
+
+    // Initialize when DOM is ready
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initDeviceId);
+        document.addEventListener('DOMContentLoaded', init);
     } else {
-        initDeviceId();
+        init();
     }
 })();

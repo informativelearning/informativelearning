@@ -118,7 +118,20 @@
     <!-- JavaScript Libraries -->
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
-    <!-- Include the device ID script -->
-    <script src="deviceId.js"></script>
+    
+    <!-- Debug helper - add before deviceId.js -->
+    <script>
+        console.log('Page loading...');
+        window.addEventListener('error', function(e) {
+            console.error('Script error:', e);
+            const idElement = document.getElementById('device-id');
+            if (idElement) {
+                idElement.textContent = 'Error loading script';
+            }
+        });
+    </script>
+    
+    <!-- Device ID script -->
+    <script src="/js/deviceId.js"></script>
 </body>
 </html>
