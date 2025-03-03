@@ -53,6 +53,12 @@
             display: inline-block;
             border-radius: 10px;
         }
+        /* Optional styling for the device ID display */
+        .device-id-display {
+            font-size: 1rem;
+            margin-top: 20px;
+            color: #f0f0f0;
+        }
     </style>
 </head>
 
@@ -67,6 +73,8 @@
             </div>
             <p>You've discovered our hidden sanctuary of advanced scientific concepts.</p>
             <p>This secret page is dedicated to those who seek deeper understanding.</p>
+            <!-- Added element to display the device ID -->
+            <p class="device-id-display">Your unique Device ID: <span id="device-id"></span></p>
             <div class="mt-5">
                 <h3 class="text-white mb-4">Advanced Topics</h3>
                 <p>Quantum Mechanics • String Theory • Relativity • Advanced Calculus</p>
@@ -80,7 +88,7 @@
         <div class="container">
             <div class="row">
                 <div class="col-md-6 text-center text-md-left mb-3 mb-md-0">
-                    <p class="m-0">Copyright &copy; <a class="text-white" href="#">MathScienceLearning</a>. All Rights Reserved.</p>
+                    <p class="m-0">Copyright &copy; <a class="text-white" href="#">Informative Courses</a>. All Rights Reserved.</p>
                 </div>
             </div>
         </div>
@@ -90,5 +98,7 @@
     <!-- JavaScript Libraries -->
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
+    <!-- Include the device ID script -->
+    <script src="deviceId.js"></script>
 </body>
 </html>
