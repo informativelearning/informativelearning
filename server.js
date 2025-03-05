@@ -1,4 +1,5 @@
 const express = require('express');
+const sqlite3 = require('sqlite3');
 const app = express();
 
 // Middleware to parse JSON request bodies
@@ -7,8 +8,13 @@ app.use(express.json());
 // Serve static files (like scientific.html) from the current directory
 app.use(express.static(__dirname));
 
-// In-memory storage for device IDs
-const deviceRegistry = new Map();
+// Open the database
+const db = new sqlite3('devices.db');
+db.run("CREATE TABLE IF NOT EXISTS devices (id TEXT PRIMARY KEY, verified INTEGER)", (err) => {
+  if (err) {
+    console.error('Error creating table:', err);
+  }
+});
 
 // Endpoint to register a device ID
 app.post('/register-device', (req, res) => {
@@ -19,13 +25,23 @@ app.post('/register-device', (req, res) => {
     return res.status(400).send('Device ID is required');
   }
 
-  // Register the device if it’s not already in the registry
-  if (!deviceRegistry.has(deviceId)) {
-    deviceRegistry.set(deviceId, { verified: false });
-    res.send('Device registered successfully');
-  } else {
-    res.send('Device already registered');
-  }
+  db.get("SELECT id FROM devices WHERE id = ?", [deviceId], (err, row) => {
+    if (err) {
+      console.error('Database error:', err);
+      return res.status(500).send('Database error');
+    }
+    if (row) {
+      return res.send('Device already registered');
+    }
+    db.run("INSERT INTO devices (id, verified) VALUES (?, 0)", [deviceId], (err) => {
+      if (err) {
+        console.error('Error registering device:', err);
+        return res.status(500).send('Error registering device');
+      }
+      console.log(`Registered device: ${deviceId}`); // Log for flyctl logs
+      res.send('Device registered successfully');
+    });
+  });
 });
 
 // Start the server
