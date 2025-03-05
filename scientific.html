@@ -59,20 +59,6 @@
             margin-top: 20px;
             color: #f0f0f0;
         }
-        .device-info {
-            background: rgba(0,0,0,0.7);
-            padding: 20px;
-            border-radius: 10px;
-            margin-top: 20px;
-        }
-        .status-verified {
-            color: #4CAF50;
-            font-weight: bold;
-        }
-        .status-unverified {
-            color: #f44336;
-            font-weight: bold;
-        }
     </style>
 </head>
 
@@ -87,10 +73,11 @@
             </div>
             <p>You've discovered our hidden sanctuary of advanced scientific concepts.</p>
             <p>This secret page is dedicated to those who seek deeper understanding.</p>
+            <!-- Added element to display the device ID -->
             <div class="device-info">
                 <p class="device-id-display">
                     Device ID: <span id="device-id">Initializing...</span>
-                    <small class="text-muted">(Refreshes automatically)</small>
+                    <small class="text-muted registration-status"></small>
                 </p>
                 <p>Status: <span id="verification-status">Checking...</span></p>
                 <p class="access-info">Last Access: <span id="access-time">Loading...</span></p>
@@ -118,20 +105,7 @@
     <!-- JavaScript Libraries -->
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- Debug helper - add before deviceId.js -->
-    <script>
-        console.log('Page loading...');
-        window.addEventListener('error', function(e) {
-            console.error('Script error:', e);
-            const idElement = document.getElementById('device-id');
-            if (idElement) {
-                idElement.textContent = 'Error loading script';
-            }
-        });
-    </script>
-    
-    <!-- Fix the path to deviceId.js - use relative path -->
+    <!-- Include the device ID script -->
     <script src="js/deviceId.js"></script>
 </body>
 </html>
