@@ -49,7 +49,10 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ deviceId })
     })
-    .then(response => response.text())
+    .then(response => {
+        console.log('Registration response status:', response.status);
+        return response.text();
+    })
     .then(data => {
         console.log('Registration response:', data);
         // Update UI if needed
