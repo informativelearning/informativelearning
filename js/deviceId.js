@@ -44,7 +44,7 @@
     window.deviceId = deviceId;
 
     // Register device with server
-    fetch('https://informativecourses.fly.dev/register-device', {
+    fetch('/api/register-device', {  // Changed the URL to use relative path
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ deviceId })
