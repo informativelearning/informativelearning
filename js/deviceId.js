@@ -44,7 +44,7 @@
     window.deviceId = deviceId;
 
     // Register device with server
-    fetch('/api/register-device', {  // Changed the URL to use relative path
+    fetch('/register-device', {  // Changed the URL to use relative path
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ deviceId })
