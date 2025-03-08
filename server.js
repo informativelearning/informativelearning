@@ -125,6 +125,17 @@ app.get('/get-access-status', (req, res) => {
   });
 });
 
+// Get all devices
+app.get('/get-devices', (req, res) => {
+  db.all('SELECT deviceId, verified FROM devices', (err, rows) => {
+    if (err) {
+      console.error('Database error:', err.message);
+      return res.status(500).send('Server error');
+    }
+    res.json(rows);
+  });
+});
+
 // Start the server on the port Fly.io provides or default to 8080
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
