@@ -8,8 +8,8 @@ app.use(express.json());
 // Serve static files (like your HTML and JS files) from the current directory
 app.use(express.static(__dirname));
 
-// Use /data directory for SQLite database
-const db = new sqlite3.Database('/data/devices.db', (err) => {
+// Use /app/data directory for SQLite database (matches fly.toml mount point)
+const db = new sqlite3.Database('/app/data/devices.db', (err) => {
   if (err) {
     console.error('Error opening database:', err.message);
   } else {
