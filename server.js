@@ -18,12 +18,56 @@ app.post('/register-device', (req, res) => {
     return res.status(400).send('Device ID is required');
   }
   if (!deviceRegistry.has(deviceId)) {
-    deviceRegistry.set(deviceId, { verified: false });
+    deviceRegistry.set(deviceId, { verified: false, lastAccessStart: null });
     console.log(`Registered device: ${deviceId}`);
     res.send('Device registered successfully');
   } else {
     console.log(`Device already registered: ${deviceId}`);
     res.send('Device already registered');
+  }
+});
+
+// Check verification status
+app.get('/check-verification', (req, res) => {
+  const { deviceId } = req.query;
+  const device = deviceRegistry.get(deviceId);
+  res.json({ verified: device ? device.verified : false });
+});
+
+// Verify device (admin endpoint)
+app.post('/verify-device', (req, res) => {
+  const { deviceId } = req.body;
+  const device = deviceRegistry.get(deviceId);
+  if (device) {
+    device.verified = true;
+    res.send('Device verified successfully');
+  } else {
+    res.status(404).send('Device not found');
+  }
+});
+
+// Get access status for coursebooks.html
+app.get('/get-access-status', (req, res) => {
+  const { deviceId } = req.query;
+  const device = deviceRegistry.get(deviceId);
+  if (!device || !device.verified) {
+    return res.json({ accessGranted: false, reason: 'Not verified' });
+  }
+  const now = Date.now();
+  const threeHours = 3 * 60 * 60 * 1000; // 3-hour cooldown period
+  const fortyMinutes = 40 * 60 * 1000;   // 40-minute access window
+  if (!device.lastAccessStart || now - device.lastAccessStart >= threeHours) {
+    // Start a new access window
+    device.lastAccessStart = now;
+    res.json({ accessGranted: true, remainingTime: fortyMinutes });
+  } else if (now - device.lastAccessStart < fortyMinutes) {
+    // Still within the 40-minute window
+    const remaining = fortyMinutes - (now - device.lastAccessStart);
+    res.json({ accessGranted: true, remainingTime: remaining });
+  } else {
+    // Access denied until the 3-hour cooldown expires
+    const nextWindowAt = device.lastAccessStart + threeHours;
+    res.json({ accessGranted: false, nextWindowAt });
   }
 });
 
