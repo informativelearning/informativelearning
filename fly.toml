@@ -34,14 +34,10 @@ primary_region = 'sjc'
     hard_limit = 25
     soft_limit = 20
 
-  # Health checks removed to allow deployment without startup timing issues
-  # [[services.http_checks]]
-  #   path = "/"
-  #   protocol = "http"
-  #   port = 8080
-  #   interval = "15s"
-  #   timeout = "10s"
-  #   grace_period = "120s"
+  [[services.tcp_checks]]
+    interval = "15s"
+    timeout = "2s"
+    grace_period = "1s"
 
 [[vm]]
   memory = '1gb'
