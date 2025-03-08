@@ -33,15 +33,15 @@ primary_region = 'sjc'
     type = "connections"
     hard_limit = 25
     soft_limit = 20
-  # Updated HTTP checks with longer timeouts and grace period
 
+  # More aggressive health check settings
   [[services.http_checks]]
     path = "/"
     protocol = "http"
     port = 8080
     interval = "15s"
-    timeout = "5s"
-    grace_period = "30s"
+    timeout = "10s"
+    grace_period = "120s"
 
 [[vm]]
   memory = '1gb'
