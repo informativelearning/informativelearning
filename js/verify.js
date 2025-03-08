@@ -1,3 +1,9 @@
+// Access control verification
+// - Checks if device ID exists in localStorage
+// - Verifies device authorization with server via /check-verification
+// - Redirects unauthorized users to index.html 
+// - Used on premium content pages to restrict access
+
 (function() {
     // Get the device ID from localStorage
     const deviceId = localStorage.getItem('deviceId');

@@ -71,6 +71,14 @@ app.get('/get-access-status', (req, res) => {
   }
 });
 
+// Server-side functionality
+// - Manages device registration (/register-device endpoint)
+// - Handles device verification (/check-verification endpoint)
+// - Controls access windows with 40-minute duration
+// - Implements 3-hour cooldown between access periods
+// - Serves static files
+// - Runs on port 8080 by default
+
 // Start the server on the port Fly.io provides or default to 8080
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {

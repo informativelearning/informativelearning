@@ -1,4 +1,8 @@
-// deviceId.js
+// Device identification and registration
+// - Generates a unique device ID using crypto API or Math.random fallback
+// - Stores device ID in localStorage
+// - Registers device with server via POST request to /register-device
+// - Updates UI to show registration status
 
 (function() {
     /**
