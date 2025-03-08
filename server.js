@@ -1,4 +1,5 @@
-const express = require('express');
+const sqlite3 = require('sqlite3').verbose();
+const db = new sqlite3.Database('./devices.db'); // Creates or opens devices.db in your project folderconst express = require('express');
 const app = express();
 
 // Middleware to parse JSON request bodies
