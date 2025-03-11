@@ -1,10 +1,37 @@
+<!DOCTYPE html>
 <html>
-  <head>
-    <title>TrueMath</title>
-  </head>
-  <body>
-    <h1>Welcome to TrueMath</h1>
-    <p>This is premium content!</p>
+<head>
+    <title>TrueMath Premium Access</title>
+    <style>
+        .container { max-width: 800px; margin: 40px auto; padding: 20px; }
+        .premium-links { margin: 20px 0; }
+        .premium-links a {
+            display: block;
+            padding: 10px;
+            margin: 5px 0;
+            background: #f0f0f0;
+            text-decoration: none;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome to TrueMath Premium</h1>
+        <p>Your verified access grants you entry to our premium content.</p>
+        
+        <div class="premium-links">
+            <h2>Premium Content</h2>
+            <a href="scientific.html">Scientific Concepts</a>
+            <a href="funinlearning.html">Fun in Learning</a>
+        </div>
+
+        <div class="device-info">
+            <p>Device ID: <span id="device-id"></span></p>
+            <p>Status: <span id="verification-status">Verified</span></p>
+        </div>
+    </div>
+    <script src="js/deviceId.js"></script>
     <script src="js/verify.js"></script>
-  </body>
+</body>
 </html>
