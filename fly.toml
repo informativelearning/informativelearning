@@ -6,7 +6,7 @@ app = 'informativecourses'
 primary_region = 'sjc'
 [build]
   dockerfile = "Dockerfile"
-  
+ 
 [http_service]
   internal_port = 8080
   force_https = true
@@ -21,18 +21,18 @@ primary_region = 'sjc'
   processes = ["app"]
 
   [[services.ports]]
-    port = 80
-    handlers = ["http"]
-    force_https = true
+	port = 80
+	handlers = ["http"]
+	force_https = true
 
   [[services.ports]]
-    port = 443
-    handlers = ["tls", "http"]
-  
+	port = 443
+	handlers = ["tls", "http"]
+ 
   [services.concurrency]
-    type = "connections"
-    hard_limit = 25
-    soft_limit = 20
+	type = "connections"
+	hard_limit = 25
+	soft_limit = 20
 
   # Health checks removed to allow deployment without startup timing issues
   # [[services.http_checks]]
