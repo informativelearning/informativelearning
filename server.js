@@ -127,12 +127,12 @@ app.get('/get-access-status', (req, res) => {
 
 // Get all devices
 app.get('/get-devices', (req, res) => {
-  db.all('SELECT deviceId, verified FROM devices', (err, rows) => {
+  db.all('SELECT deviceId, verified FROM devices', [], (err, rows) => {
     if (err) {
       console.error('Database error:', err.message);
-      return res.status(500).send('Server error');
+      return res.status(500).json({ error: 'Database error' });
     }
-    res.json(rows);
+    res.json(rows || []); // Return empty array if no devices found
   });
 });
 
