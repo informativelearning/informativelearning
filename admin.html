@@ -67,14 +67,18 @@
         function loadDevices() {
             fetch('/get-devices')
                 .then(res => {
+                    console.log('Response status:', res.status); // Debug logging
                     if (!res.ok) {
-                        throw new Error(`HTTP error! status: ${res.status}`);
+                        throw new Error(`Server returned ${res.status}`);
                     }
                     return res.json();
                 })
                 .then(devices => {
                     console.log('Received devices:', devices); // Debug logging
                     const list = document.getElementById('devicesList');
+                    if (!Array.isArray(devices)) {
+                        throw new Error('Invalid response format');
+                    }
                     list.innerHTML = devices.map(device => `
                         <div class="device-item ${device.verified ? 'verified' : 'unverified'}">
                             <span>${device.deviceId}</span>
@@ -88,7 +92,7 @@
                     `).join('');
                 })
                 .catch(error => {
-                    console.error('Error loading devices:', error);
+                    console.error('Error details:', error); // Detailed error logging
                     document.getElementById('devicesList').innerHTML = 
                         `<p style="color: red;">Error loading devices: ${error.message}</p>`;
                 });
