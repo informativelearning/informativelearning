@@ -17,7 +17,7 @@ const db = new sqlite3.Database('/app/data/devices.db', (err) => {
   }
 });
 
-// Create the devices table if it doesn’t exist
+// Create the devices table if it doesn't exist
 db.run(`CREATE TABLE IF NOT EXISTS devices (
   deviceId TEXT PRIMARY KEY,
   verified INTEGER DEFAULT 0,
@@ -71,16 +71,18 @@ app.get('/check-verification', (req, res) => {
   });
 });
 
-// Verify device (admin endpoint)
+// Verify device (admin endpoint) - enhanced logging
 app.post('/verify-device', (req, res) => {
   const { deviceId } = req.body;
+  console.log(`Verifying device: ${deviceId}`);
+  
   db.run('UPDATE devices SET verified = 1 WHERE deviceId = ?', [deviceId], function(err) {
     if (err) {
       console.error('Database error:', err.message);
       return res.status(500).send('Server error');
     }
+    console.log(`Device ${deviceId} verification status: ${this.changes > 0 ? 'success' : 'not found'}`);
     if (this.changes > 0) {
-      console.log(`Verified device: ${deviceId}`);
       res.send('Device verified successfully');
     } else {
       res.status(404).send('Device not found');
@@ -125,7 +127,7 @@ app.get('/get-access-status', (req, res) => {
   });
 });
 
-// Get all devices endpoint with better error handling
+// Get all devices endpoint - enhanced error handling
 app.get('/get-devices', (req, res) => {
   console.log('GET /get-devices request received'); // Debug logging
   
@@ -134,11 +136,8 @@ app.get('/get-devices', (req, res) => {
       console.error('Database error:', err.message);
       return res.status(500).json({ error: 'Database error' });
     }
-    
-    // Always return an array, even if empty
-    const devices = rows || [];
-    console.log('Sending devices:', devices); // Debug logging
-    res.json(devices);
+    console.log(`Retrieved ${rows?.length || 0} devices`);
+    res.json(rows || []); // Always return array, even if empty
   });
 });
 
