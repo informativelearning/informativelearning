@@ -125,14 +125,21 @@ app.get('/get-access-status', (req, res) => {
   });
 });
 
-// Get all devices
+// Get all devices - Updated with better error handling
 app.get('/get-devices', (req, res) => {
+  console.log('GET /get-devices request received'); // Debug logging
+  
   db.all('SELECT deviceId, verified FROM devices', [], (err, rows) => {
     if (err) {
-      console.error('Database error:', err.message);
+      console.error('Database error in /get-devices:', err.message);
       return res.status(500).json({ error: 'Database error' });
     }
-    res.json(rows || []); // Return empty array if no devices found
+    
+    console.log('Retrieved devices:', rows); // Debug logging
+    
+    // Always return an array, even if empty
+    const devices = rows || [];
+    res.json(devices);
   });
 });
 

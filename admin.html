@@ -66,8 +66,14 @@
 
         function loadDevices() {
             fetch('/get-devices')
-                .then(res => res.json())
+                .then(res => {
+                    if (!res.ok) {
+                        throw new Error(`HTTP error! status: ${res.status}`);
+                    }
+                    return res.json();
+                })
                 .then(devices => {
+                    console.log('Received devices:', devices); // Debug logging
                     const list = document.getElementById('devicesList');
                     list.innerHTML = devices.map(device => `
                         <div class="device-item ${device.verified ? 'verified' : 'unverified'}">
@@ -81,7 +87,11 @@
                         </div>
                     `).join('');
                 })
-                .catch(error => console.error('Error loading devices:', error));
+                .catch(error => {
+                    console.error('Error loading devices:', error);
+                    document.getElementById('devicesList').innerHTML = 
+                        `<p style="color: red;">Error loading devices: ${error.message}</p>`;
+                });
         }
 
         // Load devices on page load
