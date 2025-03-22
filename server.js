@@ -3,6 +3,7 @@ console.log('Starting server...');
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const app = express();
+require('dotenv').config();
 
 // Middleware to parse JSON request bodies
 app.use(express.json());
@@ -30,6 +31,51 @@ db.run(`CREATE TABLE IF NOT EXISTS devices (
   } else {
     console.log('Devices table created or already exists.');
   }
+});
+
+// Add basic auth middleware
+const basicAuth = require('basic-auth');
+
+function adminAuth(req, res, next) {
+    const user = basicAuth(req);
+    const validUsername = process.env.ADMIN_USERNAME || 'admin';
+    const validPassword = process.env.ADMIN_PASSWORD || 'cogitoergoball';
+    
+    if (!user || user.name !== validUsername || user.pass !== validPassword) {
+        res.set('WWW-Authenticate', 'Basic realm="Admin Access"');
+        return res.status(401).send('Access denied');
+    }
+    next();
+}
+
+// Protect admin.html and its API endpoints
+app.get('/admin.html', adminAuth, (req, res, next) => next());
+app.get('/get-devices', adminAuth, (req, res) => {
+    db.all('SELECT deviceId, verified FROM devices', [], (err, rows) => {
+        if (err) {
+            console.error('Database error:', err.message);
+            return res.status(500).json({ error: 'Database error' });
+        }
+        console.log(`Retrieved ${rows?.length || 0} devices`);
+        res.json(rows || []); // Always return array, even if empty
+    });
+});
+app.post('/verify-device', adminAuth, (req, res) => {
+    const { deviceId } = req.body;
+    console.log(`Verifying device: ${deviceId}`);
+    
+    db.run('UPDATE devices SET verified = 1 WHERE deviceId = ?', [deviceId], function(err) {
+        if (err) {
+            console.error('Database error:', err.message);
+            return res.status(500).send('Server error');
+        }
+        console.log(`Device ${deviceId} verification status: ${this.changes > 0 ? 'success' : 'not found'}`);
+        if (this.changes > 0) {
+            res.send('Device verified successfully');
+        } else {
+            res.status(404).send('Device not found');
+        }
+    });
 });
 
 // Define the /register-device endpoint
@@ -73,25 +119,6 @@ app.get('/check-verification', (req, res) => {
   });
 });
 
-// Verify device (admin endpoint) - enhanced logging
-app.post('/verify-device', (req, res) => {
-  const { deviceId } = req.body;
-  console.log(`Verifying device: ${deviceId}`);
-  
-  db.run('UPDATE devices SET verified = 1 WHERE deviceId = ?', [deviceId], function(err) {
-    if (err) {
-      console.error('Database error:', err.message);
-      return res.status(500).send('Server error');
-    }
-    console.log(`Device ${deviceId} verification status: ${this.changes > 0 ? 'success' : 'not found'}`);
-    if (this.changes > 0) {
-      res.send('Device verified successfully');
-    } else {
-      res.status(404).send('Device not found');
-    }
-  });
-});
-
 // Get access status for coursebooks.html
 app.get('/get-access-status', (req, res) => {
   const { deviceId } = req.query;
@@ -126,20 +153,6 @@ app.get('/get-access-status', (req, res) => {
       const nextWindowAt = lastAccessStart + threeHours;
       res.json({ accessGranted: false, nextWindowAt });
     }
-  });
-});
-
-// Get all devices endpoint - enhanced error handling
-app.get('/get-devices', (req, res) => {
-  console.log('GET /get-devices request received'); // Debug logging
-  
-  db.all('SELECT deviceId, verified FROM devices', [], (err, rows) => {
-    if (err) {
-      console.error('Database error:', err.message);
-      return res.status(500).json({ error: 'Database error' });
-    }
-    console.log(`Retrieved ${rows?.length || 0} devices`);
-    res.json(rows || []); // Always return array, even if empty
   });
 });
 
