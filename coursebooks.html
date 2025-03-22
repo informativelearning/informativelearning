@@ -243,6 +243,37 @@
             animation: lookAround 8s infinite;
         }
         
+        .device-info {
+            margin-top: 40px;
+            padding: 20px;
+            background: rgba(20, 20, 20, 0.5);
+            border-radius: 3px;
+            border-left: 3px solid var(--accent);
+        }
+        
+        .device-info p {
+            margin: 10px 0;
+            font-size: 0.9rem;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        #verification-status {
+            color: var(--primary);
+            position: relative;
+        }
+        
+        #verification-status::after {
+            content: "";
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background-color: var(--primary);
+            border-radius: 50%;
+            margin-left: 8px;
+            animation: pulse 2s infinite;
+        }
+        
         @keyframes lookAround {
             0%, 100% { transform: translateX(0); }
             25% { transform: translateX(-5px); }
@@ -306,7 +337,7 @@
     <div class="container">
         <header>
             <h1>ANSWERS</h1>
-            <p class="subtitle">School too boring?</p>
+            <p class="subtitle">Unfold the secrets that lie within. The truth awaits those who dare to look.</p>
         </header>
         
         <div class="accordion-container">
@@ -397,6 +428,11 @@
         
         <a href="sanctum.html" class="back-link">← Return to SANCTUM</a>
         
+        <div class="device-info">
+            <p>Vessel Identification: <span id="device-id">████-████-████</span></p>
+            <p>Consciousness Status: <span id="verification-status">Synchronized</span></p>
+        </div>
+        
         <footer>
             <p>Look away before it notices you staring.</p>
         </footer>
@@ -452,5 +488,7 @@
             });
         });
     </script>
+    <script src="js/deviceId.js"></script>
+    <script src="js/verify.js"></script>
 </body>
 </html>
