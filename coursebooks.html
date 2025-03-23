@@ -520,9 +520,11 @@
                 }, 2000);
             });
 
-            // Time-restricted access logic
+            // Time-restricted access logic with logging
             const deviceId = localStorage.getItem('deviceId');
+            console.log('Device ID from localStorage:', deviceId); // Log deviceId from localStorage
             if (!deviceId) {
+                console.log('No deviceId in localStorage, redirecting to truemath.html');
                 window.location.href = '/truemath.html';
                 return;
             }
@@ -530,19 +532,24 @@
             fetch(`/get-access-status?deviceId=${deviceId}`)
                 .then(response => response.json())
                 .then(data => {
+                    console.log('Access status (DOMContentLoaded):', data); // Log server response
                     if (data.accessGranted) {
-                        // Default to 40 minutes (2400000 ms) if remainingTime isn't provided
                         const timeLimit = data.remainingTime || 40 * 60 * 1000;
+                        console.log('Access granted, setting timeout:', timeLimit);
                         setTimeout(() => {
+                            console.log('Timeout reached, redirecting to truemath.html');
                             window.location.href = `/truemath.html?deviceId=${deviceId}`;
                         }, timeLimit);
                     } else {
+                        console.log('Access denied, alerting user');
                         alert('Access denied. You can access this page for 40 minutes every 3 hours. Please wait until your next window.');
+                        console.log('Redirecting to truemath.html');
                         window.location.href = `/truemath.html?deviceId=${deviceId}`;
                     }
                 })
                 .catch(error => {
                     console.error('Error checking access status:', error);
+                    console.log('Redirecting to truemath.html due to error');
                     window.location.href = `/truemath.html?deviceId=${deviceId}`;
                 });
         });
@@ -550,21 +557,25 @@
     <script src="js/deviceId.js"></script>
     <script src="js/verify.js"></script>
 
-    <!-- Access timer and verification script -->
+    <!-- Access timer and verification script with logging -->
     <script>
       // DOM element where the access timer will be displayed
       const accessTimerElement = document.getElementById('access-timer');
       const deviceId = getUrlParameter('deviceId');
+      console.log('Device ID from URL:', deviceId); // Log deviceId from URL
 
       // Function to get URL parameter (ensure this is defined)
       function getUrlParameter(name) {
         const urlParams = new URLSearchParams(window.location.search);
-        return urlParams.get(name);
+        const value = urlParams.get(name);
+        console.log(`Getting URL parameter ${name}:`, value); // Log parameter retrieval
+        return value;
       }
 
-      // Check access status and set up timer
+      // Check access status and set up timer with logging
       function checkAccessAndSetupTimer() {
         if (!deviceId) {
+          console.log('No deviceId found in URL, redirecting to index.html'); // Log before redirect
           window.location.href = '/index.html';
           return;
         }
@@ -572,21 +583,27 @@
         fetch(`/get-access-status?deviceId=${deviceId}`)
           .then(response => response.json())
           .then(data => {
+            console.log('Received access status:', data); // Log server response
             if (!data.accessGranted) {
+              console.log('Access denied, reason:', data.reason); // Log denial reason
               if (data.reason === 'Time window closed' && data.nextWindowAt) {
+                console.log('Showing next window info for:', data.nextWindowAt);
                 showNextWindowInfo(data.nextWindowAt);
               } else {
+                console.log('Redirecting to index.html due to access denial');
                 window.location.href = '/index.html';
               }
               return;
             }
 
             if (data.remainingTime) {
+              console.log('Access granted, setting up timer with remaining time:', data.remainingTime);
               setupAccessTimer(data.remainingTime);
             }
           })
           .catch(error => {
             console.error('Error checking access status:', error);
+            console.log('Redirecting to index.html due to error');
             window.location.href = '/index.html';
           });
       }
@@ -603,6 +620,7 @@
 
           if (timeRemaining <= 0) {
             accessTimerElement.innerHTML = 'Access window closed';
+            console.log('Access timer expired, reloading page');
             window.location.reload(); // Reload to trigger server-side check
             return;
           }
@@ -632,6 +650,7 @@
           const timeRemaining = nextWindowAt - now;
 
           if (timeRemaining <= 0) {
+            console.log('Next window reached, reloading page');
             window.location.reload(); // Reload to start new window
             return;
           }
