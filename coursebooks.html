@@ -520,9 +520,9 @@
                 }, 2000);
             });
 
-            // Time-restricted access logic with logging
+            // Time-restricted access logic with detailed logging
             const deviceId = localStorage.getItem('deviceId');
-            console.log('Device ID from localStorage:', deviceId); // Log deviceId from localStorage
+            console.log('Device ID from localStorage:', deviceId);
             if (!deviceId) {
                 console.log('No deviceId in localStorage, redirecting to truemath.html');
                 window.location.href = '/truemath.html';
@@ -532,7 +532,7 @@
             fetch(`/get-access-status?deviceId=${deviceId}`)
                 .then(response => response.json())
                 .then(data => {
-                    console.log('Access status (DOMContentLoaded):', data); // Log server response
+                    console.log('Access status (DOMContentLoaded):', JSON.stringify(data, null, 2));
                     if (data.accessGranted) {
                         const timeLimit = data.remainingTime || 40 * 60 * 1000;
                         console.log('Access granted, setting timeout:', timeLimit);
@@ -541,7 +541,7 @@
                             window.location.href = `/truemath.html?deviceId=${deviceId}`;
                         }, timeLimit);
                     } else {
-                        console.log('Access denied, alerting user');
+                        console.log('Access denied, reason:', data.reason);
                         alert('Access denied. You can access this page for 40 minutes every 3 hours. Please wait until your next window.');
                         console.log('Redirecting to truemath.html');
                         window.location.href = `/truemath.html?deviceId=${deviceId}`;
@@ -557,25 +557,25 @@
     <script src="js/deviceId.js"></script>
     <script src="js/verify.js"></script>
 
-    <!-- Access timer and verification script with logging -->
+    <!-- Access timer and verification script with detailed logging -->
     <script>
       // DOM element where the access timer will be displayed
       const accessTimerElement = document.getElementById('access-timer');
       const deviceId = getUrlParameter('deviceId');
-      console.log('Device ID from URL:', deviceId); // Log deviceId from URL
+      console.log('Device ID from URL:', deviceId);
 
-      // Function to get URL parameter (ensure this is defined)
+      // Function to get URL parameter with logging
       function getUrlParameter(name) {
         const urlParams = new URLSearchParams(window.location.search);
         const value = urlParams.get(name);
-        console.log(`Getting URL parameter ${name}:`, value); // Log parameter retrieval
+        console.log(`Getting URL parameter ${name}:`, value);
         return value;
       }
 
-      // Check access status and set up timer with logging
+      // Check access status and set up timer with detailed logging
       function checkAccessAndSetupTimer() {
         if (!deviceId) {
-          console.log('No deviceId found in URL, redirecting to index.html'); // Log before redirect
+          console.log('No deviceId found in URL, redirecting to index.html');
           window.location.href = '/index.html';
           return;
         }
@@ -583,9 +583,9 @@
         fetch(`/get-access-status?deviceId=${deviceId}`)
           .then(response => response.json())
           .then(data => {
-            console.log('Received access status:', data); // Log server response
+            console.log('Received access status:', JSON.stringify(data, null, 2));
             if (!data.accessGranted) {
-              console.log('Access denied, reason:', data.reason); // Log denial reason
+              console.log('Access denied, reason:', data.reason);
               if (data.reason === 'Time window closed' && data.nextWindowAt) {
                 console.log('Showing next window info for:', data.nextWindowAt);
                 showNextWindowInfo(data.nextWindowAt);
@@ -674,6 +674,9 @@
 
       // Initialize access check when page loads
       document.addEventListener('DOMContentLoaded', checkAccessAndSetupTimer);
+
+      // Log when scripts finish loading
+      console.log('Scripts loaded successfully');
     </script>
   </body>
 </html>
