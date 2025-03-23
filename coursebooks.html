@@ -516,5 +516,28 @@
     </script>
     <script src="js/deviceId.js"></script>
     <script src="js/verify.js"></script>
-</body>
+
+    <script>
+      const deviceId = new URLSearchParams(window.location.search).get('deviceId');
+
+      if (!deviceId) {
+        window.location.href = '/index.html';
+      }
+
+      // Periodically check access status
+      setInterval(() => {
+        fetch(`/check-verification?deviceId=${deviceId}`)
+          .then(response => response.json())
+          .then(data => {
+            if (!data.verified || data.hasExpired || !data.permissions.coursebooks) {
+              window.location.href = '/index.html';
+            }
+          })
+          .catch(error => {
+            console.error('Error fetching verification status:', error);
+            window.location.href = '/index.html';
+          });
+      }, 5 * 60 * 1000); // Check every 5 minutes
+    </script>
+  </body>
 </html>
