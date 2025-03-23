@@ -6,7 +6,7 @@
   <title>SANCTUM</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Space+Mono&display=swap');
-    
+   
     :root {
       --primary: #0f0;
       --background: #000;
@@ -14,24 +14,24 @@
       --text: #e0e0e0;
       --hover: #ff00ff;
     }
-    
+   
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
       font-family: 'Space Mono', monospace;
     }
-    
+   
     body {
       background-color: var(--background);
       color: var(--text);
-      background-image: 
+      background-image:
         radial-gradient(circle at 10% 20%, rgba(128, 0, 128, 0.1) 0%, transparent 50%),
         radial-gradient(circle at 90% 80%, rgba(0, 255, 0, 0.08) 0%, transparent 50%);
       min-height: 100vh;
       overflow-x: hidden;
     }
-    
+   
     .noise {
       position: fixed;
       top: 0;
@@ -43,7 +43,7 @@
       opacity: 0.05;
       z-index: 100;
     }
-    
+   
     .container {
       max-width: 800px;
       margin: 0 auto;
@@ -51,12 +51,12 @@
       position: relative;
       z-index: 10;
     }
-    
+   
     header {
       margin-bottom: 60px;
       position: relative;
     }
-    
+   
     h1 {
       font-size: 3.5rem;
       letter-spacing: -2px;
@@ -65,7 +65,7 @@
       text-shadow: 0 0 10px rgba(0, 255, 0, 0.7);
       position: relative;
     }
-    
+   
     h1::after {
       content: "SANCTUM";
       position: absolute;
@@ -75,7 +75,7 @@
       z-index: -1;
       opacity: 0.7;
     }
-    
+   
     .subtitle {
       font-size: 1rem;
       margin-bottom: 30px;
@@ -85,11 +85,11 @@
       border-left: 3px solid var(--primary);
       padding-left: 15px;
     }
-    
+   
     .premium-links {
       margin: 40px 0;
     }
-    
+   
     .premium-links h2 {
       font-size: 1.5rem;
       margin-bottom: 20px;
@@ -97,7 +97,7 @@
       position: relative;
       display: inline-block;
     }
-    
+   
     .premium-links h2::before {
       content: ">>";
       position: absolute;
@@ -105,13 +105,13 @@
       color: var(--primary);
       opacity: 0.7;
     }
-    
+   
     .links-container {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
       gap: 20px;
     }
-    
+   
     .premium-links a {
       display: block;
       padding: 20px;
@@ -124,7 +124,7 @@
       position: relative;
       overflow: hidden;
     }
-    
+   
     .premium-links a::before {
       content: "";
       position: absolute;
@@ -136,13 +136,13 @@
       background-size: 200% 200%;
       animation: shine 3s infinite;
     }
-    
+   
     .premium-links a:hover {
       transform: translateY(-5px);
       box-shadow: 0 5px 15px rgba(0, 255, 0, 0.2);
       border-color: var(--primary);
     }
-    
+   
     .premium-links a::after {
       content: "→";
       position: absolute;
@@ -152,12 +152,12 @@
       opacity: 0;
       transition: all 0.3s ease;
     }
-    
+   
     .premium-links a:hover::after {
       opacity: 1;
       right: 15px;
     }
-    
+   
     .device-info {
       margin-top: 60px;
       padding: 20px;
@@ -165,19 +165,19 @@
       border-radius: 3px;
       border-left: 3px solid var(--accent);
     }
-    
+   
     .device-info p {
       margin: 10px 0;
       font-size: 0.9rem;
       display: flex;
       justify-content: space-between;
     }
-    
+   
     #verification-status {
       color: var(--primary);
       position: relative;
     }
-    
+   
     #verification-status::after {
       content: "";
       display: inline-block;
@@ -188,7 +188,7 @@
       margin-left: 8px;
       animation: pulse 2s infinite;
     }
-    
+   
     .eye {
       position: absolute;
       top: 20px;
@@ -200,7 +200,7 @@
       box-shadow: 0 0 20px rgba(128, 0, 128, 0.7);
       animation: blink 6s infinite;
     }
-    
+   
     .labyrinth-symbol {
       position: fixed;
       bottom: 20px;
@@ -210,7 +210,7 @@
       opacity: 0.2;
       z-index: 1;
     }
-    
+   
     footer {
       margin-top: 60px;
       padding-top: 20px;
@@ -219,30 +219,30 @@
       text-align: center;
       opacity: 0.6;
     }
-    
+   
     @keyframes pulse {
       0% { opacity: 1; }
       50% { opacity: 0.3; }
       100% { opacity: 1; }
     }
-    
+   
     @keyframes shine {
       0% { background-position: 200% 0; }
       100% { background-position: -200% 0; }
     }
-    
+   
     @keyframes blink {
       0%, 100% { transform: scale(1); }
       95% { transform: scale(1); }
       97% { transform: scale(0.1); }
       99% { transform: scale(1); }
     }
-    
+   
     @keyframes float {
       0%, 100% { transform: translateY(0) rotate(0deg); }
       50% { transform: translateY(-10px) rotate(5deg); }
     }
-    
+   
     /* Screen flicker animation */
     body::after {
       content: "";
@@ -257,20 +257,20 @@
       z-index: 1000;
       animation: flicker 10s infinite;
     }
-    
+   
     @keyframes flicker {
       0%, 100% { opacity: 0; }
       98% { opacity: 0; }
       98.5% { opacity: 0.5; }
       99% { opacity: 0; }
     }
-    
+   
     /* Responsive */
     @media (max-width: 768px) {
       h1 {
         font-size: 2.5rem;
       }
-      
+     
       .links-container {
         grid-template-columns: 1fr;
       }
@@ -279,14 +279,14 @@
 </head>
 <body>
   <div class="noise"></div>
-  
+ 
   <div class="container">
     <header>
       <h1>SANCTUM</h1>
       <p class="subtitle">Your consciousness has been verified. The paths now open before you.</p>
       <div class="eye"></div>
     </header>
-    
+   
     <div class="premium-links">
       <h2>Sacred Pathways</h2>
       <div class="links-container">
@@ -295,33 +295,34 @@
       </div>
     </div>
 
+
     <!-- Extra device-info section -->
     <div class="device-info">
       <p>Vessel Identification: <span id="device-id">████-████-████</span></p>
       <p>Consciousness Status: <span id="verification-status">Synchronized</span></p>
       <p>Time Remaining: <span id="countdown">Checking...</span></p>
     </div>
-    
+   
     <footer>
       <p>The labyrinth watches. The labyrinth knows.</p>
     </footer>
   </div>
-  
+ 
   <svg class="labyrinth-symbol" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-    <path d="M50,10 C25,10 10,25 10,50 C10,75 25,90 50,90 C75,90 90,75 90,50 C90,25 75,10 50,10 Z M50,20 C70,20 80,30 80,50 C80,70 70,80 50,80 C30,80 20,70 20,50 C20,30 30,20 50,20 Z M50,30 C35,30 30,35 30,50 C30,65 35,70 50,70 C65,70 70,65 70,50 C70,35 65,30 50,30 Z M50,40 C40,40 40,45 40,50 C40,55 45,60 50,60 C55,60 60,55 60,50 C60,45 60,40 50,40 Z" 
-          fill="none" 
-          stroke="#800080" 
+    <path d="M50,10 C25,10 10,25 10,50 C10,75 25,90 50,90 C75,90 90,75 90,50 C90,25 75,10 50,10 Z M50,20 C70,20 80,30 80,50 C80,70 70,80 50,80 C30,80 20,70 20,50 C20,30 30,20 50,20 Z M50,30 C35,30 30,35 30,50 C30,65 35,70 50,70 C65,70 70,65 70,50 C70,35 65,30 50,30 Z M50,40 C40,40 40,45 40,50 C40,55 45,60 50,60 C55,60 60,55 60,50 C60,45 60,40 50,40 Z"
+          fill="none"
+          stroke="#800080"
           stroke-width="1" />
     <circle cx="50" cy="50" r="5" fill="#0f0" opacity="0.7">
       <animate attributeName="opacity" values="0.7;0.2;0.7" dur="5s" repeatCount="indefinite" />
     </circle>
   </svg>
-  
+ 
   <script>
     // Simulate deviceId.js
     document.addEventListener('DOMContentLoaded', function() {
-      const randomId = Math.random().toString(36).substring(2, 6) + '-' + 
-                       Math.random().toString(36).substring(2, 6) + '-' + 
+      const randomId = Math.random().toString(36).substring(2, 6) + '-' +
+                       Math.random().toString(36).substring(2, 6) + '-' +
                        Math.random().toString(36).substring(2, 6);
       document.getElementById('device-id').textContent = randomId;
     });
@@ -330,70 +331,78 @@
   <script src="js/deviceId.js"></script>
   <script src="js/verify.js"></script>
 
+
   <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      // Get deviceId from URL query parameters
-      const deviceId = new URLSearchParams(window.location.search).get('deviceId');
+    // Get deviceId from URL query parameters
+    const deviceId = new URLSearchParams(window.location.search).get('deviceId');
 
-      // If no deviceId, redirect to index.html
-      if (!deviceId) {
-        window.location.href = '/index.html';
-        return; // Exit the script
-      }
 
-      // Update the coursebooks.html link with deviceId
-      const coursebooksLink = document.querySelector('a[href="coursebooks.html"]');
-      if (coursebooksLink) {
-        coursebooksLink.href = `coursebooks.html?deviceId=${deviceId}`;
-      }
+    // If no deviceId, redirect to index.html
+    if (!deviceId) {
+      window.location.href = '/index.html';
+    }
 
-      // Function to fetch verification status from the server
-      function fetchVerificationStatus() {
-        fetch(`/check-verification?deviceId=${deviceId}`)
-          .then(response => response.json())
-          .then(data => {
-            if (!data.verified || data.hasExpired) {
-              window.location.href = '/index.html';
-            } else if (data.expiresAt) {
-              startCountdown(data.expiresAt);
-            }
-          })
-          .catch(error => {
-            console.error('Error fetching verification status:', error);
+
+    // Function to fetch verification status from the server
+    function fetchVerificationStatus() {
+      fetch(`/check-verification?deviceId=${deviceId}`)
+        .then(response => response.json())
+        .then(data => {
+          // If user is not verified or verification has expired, redirect
+          if (!data.verified || data.hasExpired) {
             window.location.href = '/index.html';
-          });
-      }
-
-      // Function to start and update the countdown
-      function startCountdown(expiresAt) {
-        const countdownElement = document.getElementById('countdown');
-
-        function updateCountdown() {
-          const now = Date.now();
-          const timeLeft = expiresAt - now;
-
-          if (timeLeft <= 0) {
-            countdownElement.textContent = 'Verification expired';
-            window.location.href = '/index.html';
-          } else {
-            const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
-            const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
-            countdownElement.textContent = `Verification expires in: ${days}d ${hours}h ${minutes}m ${seconds}s`;
+          } else if (data.expiresAt) {
+            // Start the countdown if expiration timestamp is available
+            startCountdown(data.expiresAt);
           }
-        }
+        })
+        .catch(error => {
+          console.error('Error fetching verification status:', error);
+          window.location.href = '/index.html'; // Redirect on error for safety
+        });
+    }
 
-        updateCountdown();
-        setInterval(updateCountdown, 1000);
+
+    // Function to start and update the countdown
+    function startCountdown(expiresAt) {
+      const countdownElement = document.getElementById('countdown');
+
+
+      function updateCountdown() {
+        const now = Date.now();
+        const timeLeft = expiresAt - now;
+
+
+        if (timeLeft <= 0) {
+          // Verification has expired
+          countdownElement.textContent = 'Verification expired';
+          window.location.href = '/index.html';
+        } else {
+          // Calculate days, hours, minutes, seconds
+          const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+          const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+          const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+          const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+
+
+          // Display the countdown
+          countdownElement.textContent = `Verification expires in: ${days}d ${hours}h ${minutes}m ${seconds}s`;
+        }
       }
 
-      // Fetch status on page load
-      fetchVerificationStatus();
 
-      // Periodically recheck status every 5 minutes
-      setInterval(fetchVerificationStatus, 5 * 60 * 1000);
-    });
+      // Update immediately and then every second
+      updateCountdown();
+      setInterval(updateCountdown, 1000);
+    }
+
+
+    // Fetch status on page load
+    fetchVerificationStatus();
+
+
+    // Periodically recheck status every 5 minutes (300,000 ms)
+    setInterval(fetchVerificationStatus, 5 * 60 * 1000);
   </script>
 </body>
 </html>
