@@ -328,6 +328,33 @@
                 font-size: 2.5rem;
             }
         }
+
+        .access-timer {
+            background: var(--panel);
+            border: 1px solid var(--accent);
+            border-radius: 3px;
+            padding: 15px;
+            margin: 20px 0;
+            font-weight: bold;
+            text-align: center;
+            color: var(--primary);
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .access-timer::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, transparent 65%, rgba(0, 255, 0, 0.1) 70%, transparent 75%);
+            background-size: 200% 200%;
+            animation: shine 3s infinite;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body>
@@ -340,6 +367,11 @@
             <p class="subtitle">Unfold the secrets that lie within. The truth awaits those who dare to look.</p>
         </header>
         
+        <!-- Add access timer container here -->
+        <div id="access-container">
+            <div id="access-timer" class="access-timer"></div>
+        </div>
+
         <div class="accordion-container">
             <!-- Accordion 1 -->
             <div class="accordion">
@@ -431,6 +463,7 @@
         <div class="device-info">
             <p>Vessel Identification: <span id="device-id">████-████-████</span></p>
             <p>Consciousness Status: <span id="verification-status">Synchronized</span></p>
+            <p>Access Window: <span id="access-timer">Checking...</span></p>
         </div>
         
         <footer>
@@ -517,27 +550,111 @@
     <script src="js/deviceId.js"></script>
     <script src="js/verify.js"></script>
 
+    <!-- Access timer and verification script -->
     <script>
-      const deviceId = new URLSearchParams(window.location.search).get('deviceId');
+      // DOM element where the access timer will be displayed
+      const accessTimerElement = document.getElementById('access-timer');
+      const deviceId = getUrlParameter('deviceId');
 
-      if (!deviceId) {
-        window.location.href = '/index.html';
+      // Function to get URL parameter (ensure this is defined)
+      function getUrlParameter(name) {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(name);
       }
 
-      // Periodically check access status
-      setInterval(() => {
-        fetch(`/check-verification?deviceId=${deviceId}`)
+      // Check access status and set up timer
+      function checkAccessAndSetupTimer() {
+        if (!deviceId) {
+          window.location.href = '/index.html';
+          return;
+        }
+
+        fetch(`/get-access-status?deviceId=${deviceId}`)
           .then(response => response.json())
           .then(data => {
-            if (!data.verified || data.hasExpired || !data.permissions.coursebooks) {
-              window.location.href = '/index.html';
+            if (!data.accessGranted) {
+              if (data.reason === 'Time window closed' && data.nextWindowAt) {
+                showNextWindowInfo(data.nextWindowAt);
+              } else {
+                window.location.href = '/index.html';
+              }
+              return;
+            }
+
+            if (data.remainingTime) {
+              setupAccessTimer(data.remainingTime);
             }
           })
           .catch(error => {
-            console.error('Error fetching verification status:', error);
+            console.error('Error checking access status:', error);
             window.location.href = '/index.html';
           });
-      }, 5 * 60 * 1000); // Check every 5 minutes
+      }
+
+      // Set up access timer
+      function setupAccessTimer(remainingTime) {
+        if (!accessTimerElement) return;
+
+        const endTime = Date.now() + remainingTime;
+
+        function updateAccessTimer() {
+          const now = Date.now();
+          const timeRemaining = endTime - now;
+
+          if (timeRemaining <= 0) {
+            accessTimerElement.innerHTML = 'Access window closed';
+            window.location.reload(); // Reload to trigger server-side check
+            return;
+          }
+
+          // Calculate time units
+          const minutes = Math.floor(timeRemaining / (1000 * 60));
+          const seconds = Math.floor((timeRemaining % (1000 * 60)) / 1000);
+
+          // Display timer
+          accessTimerElement.innerHTML = `Access time remaining: ${minutes}m ${seconds}s`;
+        }
+
+        // Update timer immediately and then every second
+        updateAccessTimer();
+        const accessInterval = setInterval(updateAccessTimer, 1000);
+
+        // Store interval ID for potential cleanup
+        window.accessInterval = accessInterval;
+      }
+
+      // Show information about when the next access window starts
+      function showNextWindowInfo(nextWindowAt) {
+        if (!accessTimerElement) return;
+
+        function updateNextWindowInfo() {
+          const now = Date.now();
+          const timeRemaining = nextWindowAt - now;
+
+          if (timeRemaining <= 0) {
+            window.location.reload(); // Reload to start new window
+            return;
+          }
+
+          // Calculate time units
+          const hours = Math.floor(timeRemaining / (1000 * 60 * 60));
+          const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
+          const seconds = Math.floor((timeRemaining % (1000 * 60)) / 1000);
+
+          // Display info
+          accessTimerElement.innerHTML = `Next access window in: ${hours}h ${minutes}m ${seconds}s`;
+        }
+
+        // Update info immediately and then every second
+        updateNextWindowInfo();
+        const nextWindowInterval = setInterval(updateNextWindowInfo, 1000);
+
+        // Store interval ID for potential cleanup
+        window.nextWindowInterval = nextWindowInterval;
+      }
+
+      // Initialize access check when page loads
+      document.addEventListener('DOMContentLoaded', checkAccessAndSetupTimer);
     </script>
   </body>
 </html>
