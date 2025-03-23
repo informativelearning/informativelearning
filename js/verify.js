@@ -4,8 +4,34 @@
     return;
   }
 
-  // Get the device ID from localStorage (assuming this is how verification works)
+  // Get the device ID from localStorage
   const deviceId = localStorage.getItem('deviceId');
+  
+  // Define all public pages that don't require verification
+  const publicPages = [
+    'index.html', 
+    'about.html', 
+    'contact.html', 
+    'course.html', 
+    'coursebooks.html', 
+    'detail.html', 
+    'feature.html', 
+    'team.html', 
+    'testimonial.html'
+  ];
+  
+  // Define hidden pages that don't trigger dashboard/redirect even for verified users
+  const hiddenPages = ['truemath.html', 'coursebooks.html', 'funinlearning.html'];
+  
+  // Get the current page
+  const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+  
+  // If no deviceId but on a public page, allow access without redirection
+  if (!deviceId && publicPages.includes(currentPage)) {
+    return;
+  }
+  
+  // If no deviceId and not on a public page, redirect to index
   if (!deviceId) {
     window.location.href = 'index.html';
     return;
@@ -49,10 +75,13 @@
   fetch(`/check-verification?deviceId=${deviceId}`)
     .then(response => response.json())
     .then(data => {
-      const currentPage = window.location.pathname.split('/').pop() || 'index.html';
       if (data.verified) {
-        // List of pages where we don’t open the dashboard or redirect
-        const hiddenPages = ['truemath.html', 'coursebooks.html', 'funinlearning.html'];
+        // If verified but on a hidden page, do nothing
+        if (hiddenPages.includes(currentPage)) {
+          return;
+        }
+        
+        // If verified and not on a hidden page, open dashboard
         if (!hiddenPages.includes(currentPage)) {
           // Open the Dashboard window
           const opened = openDashboard(deviceId);
@@ -68,11 +97,20 @@
           }
         }
       } else {
+        // If not verified but on a public page, do nothing
+        if (publicPages.includes(currentPage)) {
+          return;
+        }
+        
+        // If not verified and not on a public page, redirect to index
         window.location.href = 'index.html';
       }
     })
     .catch(error => {
       console.error('Verification check failed:', error);
-      window.location.href = 'index.html';
+      // Only redirect to index if not already on a public page
+      if (!publicPages.includes(currentPage)) {
+        window.location.href = 'index.html';
+      }
     });
 })();
