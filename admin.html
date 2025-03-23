@@ -41,6 +41,10 @@
             <label>
                 <input type="checkbox" id="coursebookAccess"> Allow Coursebook Access
             </label>
+
+            <label>
+                <input type="checkbox" id="collegeCoursesAccess"> Allow College Courses Access
+            </label>
             
             <button onclick="verifyDevice()">Verify Device</button>
             <p id="status"></p>
@@ -60,6 +64,7 @@
                         parseInt(document.getElementById('customDays').value) :
                         parseInt(durationType);
             const allowCoursebooks = document.getElementById('coursebookAccess').checked;
+            const allowCollegeCourses = document.getElementById('collegeCoursesAccess').checked;
 
             if (!deviceId) {
                 setStatus('Please enter a device ID');
@@ -72,7 +77,8 @@
                 body: JSON.stringify({ 
                     deviceId,
                     days,
-                    allowCoursebooks
+                    allowCoursebooks,
+                    allowCollegeCourses
                 })
             })
             .then(response => response.text())
