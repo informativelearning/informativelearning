@@ -58,7 +58,6 @@
     return;
   }
 
-  // Function to open the Dashboard window
   function openDashboard(deviceId) {
     // Open a new window (starts as about:blank)
     const win = window.open('');
@@ -66,23 +65,33 @@
       alert('Please allow popups for this site to access the content.');
       return false;
     }
-
+  
     try {
-      // Write HTML to the new window
-      win.document.write(`
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <title>Dashboard</title>
-            <link rel="icon" type="image/x-icon" href="/Dashboard-favicon.ico">
-          </head>
-          <body style="margin:0;padding:0;overflow:hidden;">
-            <iframe src="truemath.html?deviceId=${encodeURIComponent(deviceId)}" 
-                    style="width:100%;height:100vh;border:none;"></iframe>
-          </body>
-        </html>
-      `);
-      win.document.close();
+      // Set up the basic document structure
+      win.document.body.style.margin = '0';
+      win.document.body.style.height = '100vh';
+      win.document.body.style.padding = '0';
+      win.document.body.style.overflow = 'hidden';
+      
+      // Set the title
+      win.document.title = 'Dashboard';
+      
+      // Create and set the favicon
+      const favicon = win.document.createElement('link');
+      favicon.rel = 'icon';
+      favicon.type = 'image/x-icon';
+      favicon.href = window.location.origin + '/Dashboard-favicon.ico';
+      win.document.head.appendChild(favicon);
+      
+      // Create and append the iframe
+      const iframe = win.document.createElement('iframe');
+      iframe.style.border = 'none';
+      iframe.style.width = '100%';
+      iframe.style.height = '100%';
+      iframe.style.margin = '0';
+      iframe.src = `truemath.html?deviceId=${encodeURIComponent(deviceId)}`;
+      
+      win.document.body.appendChild(iframe);
       return true;
     } catch (error) {
       console.error('Error creating window:', error);
@@ -91,6 +100,7 @@
       return false;
     }
   }
+  
 
   // Fetch verification status from the server
   fetch(`/check-verification?deviceId=${deviceId}`)
