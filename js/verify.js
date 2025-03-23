@@ -23,8 +23,13 @@
   // Define hidden pages that don't trigger dashboard/redirect even for verified users
   const hiddenPages = ['truemath.html', 'coursebooks.html', 'funinlearning.html'];
   
-  // Get the current page
-  const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+  // Get the current page - handle root domain case
+  let currentPage = window.location.pathname.split('/').pop() || 'index.html';
+
+  // If pathname is empty or just "/", we're at the root domain which serves index.html
+  if (window.location.pathname === '/' || window.location.pathname === '') {
+    currentPage = 'index.html';
+  }
   
   // If no deviceId but on a public page, allow access without redirection
   if (!deviceId && publicPages.includes(currentPage)) {
