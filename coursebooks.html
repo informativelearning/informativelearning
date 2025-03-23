@@ -486,6 +486,32 @@
                     }
                 }, 2000);
             });
+
+            // Time-restricted access logic
+            const deviceId = localStorage.getItem('deviceId');
+            if (!deviceId) {
+                window.location.href = '/truemath.html';
+                return;
+            }
+
+            fetch(`/get-access-status?deviceId=${deviceId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.accessGranted) {
+                        // Default to 40 minutes (2400000 ms) if remainingTime isn't provided
+                        const timeLimit = data.remainingTime || 40 * 60 * 1000;
+                        setTimeout(() => {
+                            window.location.href = `/truemath.html?deviceId=${deviceId}`;
+                        }, timeLimit);
+                    } else {
+                        alert('Access denied. You can access this page for 40 minutes every 3 hours. Please wait until your next window.');
+                        window.location.href = `/truemath.html?deviceId=${deviceId}`;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking access status:', error);
+                    window.location.href = `/truemath.html?deviceId=${deviceId}`;
+                });
         });
     </script>
     <script src="js/deviceId.js"></script>
