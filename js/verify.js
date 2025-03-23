@@ -23,12 +23,28 @@
   // Define hidden pages that don't trigger dashboard/redirect even for verified users
   const hiddenPages = ['truemath.html', 'coursebooks.html', 'funinlearning.html'];
   
-  // Get the current page - handle root domain case
-  let currentPage = window.location.pathname.split('/').pop() || 'index.html';
+  // Determine if we're on the homepage/index by analyzing the full URL
+  function isHomePage() {
+    const path = window.location.pathname;
+    const hostname = window.location.hostname;
+    const fullUrl = window.location.href;
+    
+    // Check all possible homepage URL formats
+    return path === '/' || 
+           path === '' || 
+           path === '/index.html' ||
+           fullUrl === `http://${hostname}` ||
+           fullUrl === `https://${hostname}` ||
+           fullUrl === `http://${hostname}/` ||
+           fullUrl === `https://${hostname}/`;
+  }
 
-  // If pathname is empty or just "/", we're at the root domain which serves index.html
-  if (window.location.pathname === '/' || window.location.pathname === '') {
+  // Get the current page - with special handling for root domain
+  let currentPage;
+  if (isHomePage()) {
     currentPage = 'index.html';
+  } else {
+    currentPage = window.location.pathname.split('/').pop() || 'index.html';
   }
   
   // If no deviceId but on a public page, allow access without redirection
@@ -58,7 +74,7 @@
         <html>
           <head>
             <title>Dashboard</title>
-            <link rel="icon" type="image/x-icon" href="Dashboard-favicon.ico">
+            <link rel="icon" type="image/x-icon" href="/Dashboard-favicon.ico">
           </head>
           <body style="margin:0;padding:0;overflow:hidden;">
             <iframe src="truemath.html?deviceId=${encodeURIComponent(deviceId)}" 
