@@ -299,6 +299,7 @@
     <div class="device-info">
       <p>Vessel Identification: <span id="device-id">████-████-████</span></p>
       <p>Consciousness Status: <span id="verification-status">Synchronized</span></p>
+      <p>Time Remaining: <span id="countdown">Checking...</span></p>
     </div>
     
     <footer>
@@ -328,5 +329,69 @@
   <!-- External script calls added minimally -->
   <script src="js/deviceId.js"></script>
   <script src="js/verify.js"></script>
+
+  <script>
+    // Get deviceId from URL query parameters
+    const deviceId = new URLSearchParams(window.location.search).get('deviceId');
+
+    // If no deviceId, redirect to index.html
+    if (!deviceId) {
+      window.location.href = '/index.html';
+    }
+
+    // Function to fetch verification status from the server
+    function fetchVerificationStatus() {
+      fetch(`/check-verification?deviceId=${deviceId}`)
+        .then(response => response.json())
+        .then(data => {
+          // If user is not verified or verification has expired, redirect
+          if (!data.verified || data.hasExpired) {
+            window.location.href = '/index.html';
+          } else if (data.expiresAt) {
+            // Start the countdown if expiration timestamp is available
+            startCountdown(data.expiresAt);
+          }
+        })
+        .catch(error => {
+          console.error('Error fetching verification status:', error);
+          window.location.href = '/index.html'; // Redirect on error for safety
+        });
+    }
+
+    // Function to start and update the countdown
+    function startCountdown(expiresAt) {
+      const countdownElement = document.getElementById('countdown');
+
+      function updateCountdown() {
+        const now = Date.now();
+        const timeLeft = expiresAt - now;
+
+        if (timeLeft <= 0) {
+          // Verification has expired
+          countdownElement.textContent = 'Verification expired';
+          window.location.href = '/index.html';
+        } else {
+          // Calculate days, hours, minutes, seconds
+          const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+          const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+          const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+          const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+
+          // Display the countdown
+          countdownElement.textContent = `Verification expires in: ${days}d ${hours}h ${minutes}m ${seconds}s`;
+        }
+      }
+
+      // Update immediately and then every second
+      updateCountdown();
+      setInterval(updateCountdown, 1000);
+    }
+
+    // Fetch status on page load
+    fetchVerificationStatus();
+
+    // Periodically recheck status every 5 minutes (300,000 ms)
+    setInterval(fetchVerificationStatus, 5 * 60 * 1000);
+  </script>
 </body>
 </html>

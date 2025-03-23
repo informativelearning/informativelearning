@@ -182,42 +182,35 @@ app.post('/register-device', (req, res) => {
 
 // Check verification status
 app.get('/check-verification', (req, res) => {
-  const { deviceId } = req.query;
+  const deviceId = req.query.deviceId;
   const now = Date.now();
-  
-  db.get('SELECT verified, verification_expires_at, access_coursebooks, access_collegecourses FROM devices WHERE deviceId = ?', [deviceId], (err, row) => {
+
+  db.get('SELECT verified, verification_expires_at, access_coursebooks FROM devices WHERE deviceId = ?', [deviceId], (err, row) => {
     if (err) {
       console.error('Database error:', err.message);
       return res.status(500).send('Server error');
     }
-    
+
     let verified = false;
-    let expiresIn = null;
+    let expiresAt = null;
     let hasExpired = false;
-    let permissions = { coursebooks: false, collegeCourses: false };
-    
+    let permissions = { coursebooks: false };
+
     if (row) {
+      expiresAt = row.verification_expires_at; // Timestamp from the database
       if (row.verified === 1) {
-        if (!row.verification_expires_at || row.verification_expires_at > now) {
+        if (!expiresAt || expiresAt > now) {
           verified = true;
-          
-          // Calculate time until expiration if available
-          if (row.verification_expires_at) {
-            expiresIn = Math.floor((row.verification_expires_at - now) / (24 * 60 * 60 * 1000)); // days
-          }
-          
-          // Set permissions
-          permissions.coursebooks = row.access_coursebooks === 1;
-          permissions.collegeCourses = row.access_collegecourses === 1;
         } else {
           hasExpired = true;
         }
       }
+      permissions.coursebooks = row.access_coursebooks === 1;
     }
-    
-    res.json({ 
-      verified, 
-      expiresIn,
+
+    res.json({
+      verified,
+      expiresAt,
       hasExpired,
       permissions
     });
