@@ -58,7 +58,7 @@
         <html>
           <head>
             <title>Dashboard</title>
-            <link rel="icon" type="image/x-icon" href="/Dashboard-favicon.ico">
+            <link rel="icon" type="image/x-icon" href="Dashboard-favicon.ico">
           </head>
           <body style="margin:0;padding:0;overflow:hidden;">
             <iframe src="truemath.html?deviceId=${encodeURIComponent(deviceId)}" 
