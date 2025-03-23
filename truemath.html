@@ -345,8 +345,6 @@
       const coursebooksLink = document.querySelector('a[href="coursebooks.html"]');
       if (coursebooksLink) {
         coursebooksLink.href = `coursebooks.html?deviceId=${deviceId}`;
-        // Optional: Ensure it opens in the parent window if in an iframe
-        coursebooksLink.target = '_parent';
       }
 
       // Function to fetch verification status from the server
