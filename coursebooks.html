@@ -678,5 +678,43 @@
       // Log when scripts finish loading
       console.log('Scripts loaded successfully');
     </script>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        // Get deviceId from localStorage (matches verify.js approach)
+        const deviceId = localStorage.getItem('deviceId');
+        if (!deviceId) {
+          window.location.href = '/index.html';
+          return;
+        }
+
+        // Function to check access status
+        function checkAccess() {
+          fetch(`/check-verification?deviceId=${deviceId}`)
+            .then(response => response.json())
+            .then(data => {
+              if (!data.verified || data.hasExpired || !data.permissions?.coursebooks) {
+                window.location.href = '/index.html';
+                return;
+              }
+
+              // Start timer if access is granted
+              if (data.remainingTime) {
+                setupAccessTimer(data.remainingTime);
+              }
+            })
+            .catch(error => {
+              console.error('Error checking access:', error);
+              window.location.href = '/index.html';
+            });
+        }
+
+        // Initialize access check
+        checkAccess();
+        
+        // Recheck access every minute
+        setInterval(checkAccess, 60000);
+      });
+    </script>
   </body>
 </html>
