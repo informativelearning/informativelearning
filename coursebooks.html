@@ -473,248 +473,71 @@
     
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Use deviceId from deviceId.js (available as window.deviceId)
+            if (!window.deviceId) {
+                window.location.href = '/index.html';
+                return;
+            }
+
+            // Handle accordion functionality
             const accordionHeaders = document.querySelectorAll('.accordion-header');
-            
             accordionHeaders.forEach(header => {
                 header.addEventListener('click', function() {
                     const content = this.nextElementSibling;
                     const toggleIcon = this.querySelector('.toggle-icon');
-                    
-                    // Toggle active class
                     content.classList.toggle('active');
-                    
-                    // Change toggle icon
-                    if (content.classList.contains('active')) {
-                        toggleIcon.textContent = '-';
-                    } else {
-                        toggleIcon.textContent = '+';
-                    }
+                    toggleIcon.textContent = content.classList.contains('active') ? '-' : '+';
                 });
             });
-            
-            // Peeping eye follows mouse vertically when visible
-            document.addEventListener('mousemove', function(e) {
-                const eye = document.querySelector('.peeping-eye::before');
-                if (eye) {
-                    const eyeRect = eye.getBoundingClientRect();
-                    const eyeX = eyeRect.left + eyeRect.width / 2;
-                    const eyeY = eyeRect.top + eyeRect.height / 2;
-                    
-                    const angle = Math.atan2(e.clientY - eyeY, e.clientX - eyeX);
-                    const rotation = angle * (180 / Math.PI);
-                    
-                    eye.style.transform = `rotate(${rotation}deg)`;
-                }
-            });
-            
-            // Random flicker effect for images
-            const images = document.querySelectorAll('.reveal-image');
-            images.forEach(img => {
-                setInterval(() => {
-                    if (Math.random() > 0.95) {
-                        img.style.opacity = '0.7';
-                        setTimeout(() => {
-                            img.style.opacity = '0.9';
-                        }, 100);
-                    }
-                }, 2000);
-            });
 
-            // Time-restricted access logic with detailed logging
-            const deviceId = localStorage.getItem('deviceId');
-            console.log('Device ID from localStorage:', deviceId);
-            if (!deviceId) {
-                console.log('No deviceId in localStorage, redirecting to truemath.html');
-                window.location.href = '/truemath.html';
-                return;
+            // Access timer setup
+            function checkAccessAndSetupTimer() {
+                fetch(`/get-access-status?deviceId=${window.deviceId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (!data.accessGranted || !data.permissions?.coursebooks) {
+                            window.location.href = '/truemath.html';
+                            return;
+                        }
+
+                        if (data.remainingTime) {
+                            setupAccessTimer(data.remainingTime);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        window.location.href = '/truemath.html';
+                    });
             }
 
-            fetch(`/get-access-status?deviceId=${deviceId}`)
-                .then(response => response.json())
-                .then(data => {
-                    console.log('Access status (DOMContentLoaded):', JSON.stringify(data, null, 2));
-                    if (data.accessGranted) {
-                        const timeLimit = data.remainingTime || 40 * 60 * 1000;
-                        console.log('Access granted, setting timeout:', timeLimit);
-                        setTimeout(() => {
-                            console.log('Timeout reached, redirecting to truemath.html');
-                            window.location.href = `/truemath.html?deviceId=${deviceId}`;
-                        }, timeLimit);
-                    } else {
-                        console.log('Access denied, reason:', data.reason);
-                        alert('Access denied. You can access this page for 40 minutes every 3 hours. Please wait until your next window.');
-                        console.log('Redirecting to truemath.html');
-                        window.location.href = `/truemath.html?deviceId=${deviceId}`;
+            function setupAccessTimer(remainingTime) {
+                const timerElement = document.getElementById('access-timer');
+                const endTime = Date.now() + remainingTime;
+
+                function updateTimer() {
+                    const now = Date.now();
+                    const timeLeft = endTime - now;
+
+                    if (timeLeft <= 0) {
+                        window.location.href = '/truemath.html';
+                        return;
                     }
-                })
-                .catch(error => {
-                    console.error('Error checking access status:', error);
-                    console.log('Redirecting to truemath.html due to error');
-                    window.location.href = `/truemath.html?deviceId=${deviceId}`;
-                });
+
+                    const minutes = Math.floor(timeLeft / 60000);
+                    const seconds = Math.floor((timeLeft % 60000) / 1000);
+                    timerElement.textContent = `${minutes}m ${seconds}s remaining`;
+                }
+
+                updateTimer();
+                const timerInterval = setInterval(updateTimer, 1000);
+                window.timerInterval = timerInterval;
+            }
+
+            // Start the access check and timer
+            checkAccessAndSetupTimer();
         });
     </script>
     <script src="js/deviceId.js"></script>
     <script src="js/verify.js"></script>
-
-    <!-- Access timer and verification script with detailed logging -->
-    <script>
-      // DOM element where the access timer will be displayed
-      const accessTimerElement = document.getElementById('access-timer');
-      const deviceId = getUrlParameter('deviceId');
-      console.log('Device ID from URL:', deviceId);
-
-      // Function to get URL parameter with logging
-      function getUrlParameter(name) {
-        const urlParams = new URLSearchParams(window.location.search);
-        const value = urlParams.get(name);
-        console.log(`Getting URL parameter ${name}:`, value);
-        return value;
-      }
-
-      // Check access status and set up timer with detailed logging
-      function checkAccessAndSetupTimer() {
-        if (!deviceId) {
-          console.log('No deviceId found in URL, redirecting to index.html');
-          window.location.href = '/index.html';
-          return;
-        }
-
-        fetch(`/get-access-status?deviceId=${deviceId}`)
-          .then(response => response.json())
-          .then(data => {
-            console.log('Received access status:', JSON.stringify(data, null, 2));
-            if (!data.accessGranted) {
-              console.log('Access denied, reason:', data.reason);
-              if (data.reason === 'Time window closed' && data.nextWindowAt) {
-                console.log('Showing next window info for:', data.nextWindowAt);
-                showNextWindowInfo(data.nextWindowAt);
-              } else {
-                console.log('Redirecting to index.html due to access denial');
-                window.location.href = '/index.html';
-              }
-              return;
-            }
-
-            if (data.remainingTime) {
-              console.log('Access granted, setting up timer with remaining time:', data.remainingTime);
-              setupAccessTimer(data.remainingTime);
-            }
-          })
-          .catch(error => {
-            console.error('Error checking access status:', error);
-            console.log('Redirecting to index.html due to error');
-            window.location.href = '/index.html';
-          });
-      }
-
-      // Set up access timer
-      function setupAccessTimer(remainingTime) {
-        if (!accessTimerElement) return;
-
-        const endTime = Date.now() + remainingTime;
-
-        function updateAccessTimer() {
-          const now = Date.now();
-          const timeRemaining = endTime - now;
-
-          if (timeRemaining <= 0) {
-            accessTimerElement.innerHTML = 'Access window closed';
-            console.log('Access timer expired, reloading page');
-            window.location.reload(); // Reload to trigger server-side check
-            return;
-          }
-
-          // Calculate time units
-          const minutes = Math.floor(timeRemaining / (1000 * 60));
-          const seconds = Math.floor((timeRemaining % (1000 * 60)) / 1000);
-
-          // Display timer
-          accessTimerElement.innerHTML = `Access time remaining: ${minutes}m ${seconds}s`;
-        }
-
-        // Update timer immediately and then every second
-        updateAccessTimer();
-        const accessInterval = setInterval(updateAccessTimer, 1000);
-
-        // Store interval ID for potential cleanup
-        window.accessInterval = accessInterval;
-      }
-
-      // Show information about when the next access window starts
-      function showNextWindowInfo(nextWindowAt) {
-        if (!accessTimerElement) return;
-
-        function updateNextWindowInfo() {
-          const now = Date.now();
-          const timeRemaining = nextWindowAt - now;
-
-          if (timeRemaining <= 0) {
-            console.log('Next window reached, reloading page');
-            window.location.reload(); // Reload to start new window
-            return;
-          }
-
-          // Calculate time units
-          const hours = Math.floor(timeRemaining / (1000 * 60 * 60));
-          const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
-          const seconds = Math.floor((timeRemaining % (1000 * 60)) / 1000);
-
-          // Display info
-          accessTimerElement.innerHTML = `Next access window in: ${hours}h ${minutes}m ${seconds}s`;
-        }
-
-        // Update info immediately and then every second
-        updateNextWindowInfo();
-        const nextWindowInterval = setInterval(updateNextWindowInfo, 1000);
-
-        // Store interval ID for potential cleanup
-        window.nextWindowInterval = nextWindowInterval;
-      }
-
-      // Initialize access check when page loads
-      document.addEventListener('DOMContentLoaded', checkAccessAndSetupTimer);
-
-      // Log when scripts finish loading
-      console.log('Scripts loaded successfully');
-    </script>
-
-    <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        // Get deviceId from localStorage (matches verify.js approach)
-        const deviceId = localStorage.getItem('deviceId');
-        if (!deviceId) {
-          window.location.href = '/index.html';
-          return;
-        }
-
-        // Function to check access status
-        function checkAccess() {
-          fetch(`/check-verification?deviceId=${deviceId}`)
-            .then(response => response.json())
-            .then(data => {
-              if (!data.verified || data.hasExpired || !data.permissions?.coursebooks) {
-                window.location.href = '/index.html';
-                return;
-              }
-
-              // Start timer if access is granted
-              if (data.remainingTime) {
-                setupAccessTimer(data.remainingTime);
-              }
-            })
-            .catch(error => {
-              console.error('Error checking access:', error);
-              window.location.href = '/index.html';
-            });
-        }
-
-        // Initialize access check
-        checkAccess();
-        
-        // Recheck access every minute
-        setInterval(checkAccess, 60000);
-      });
-    </script>
-  </body>
+</body>
 </html>
