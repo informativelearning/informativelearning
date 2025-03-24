@@ -473,41 +473,19 @@
     
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Get deviceId from localStorage instead of URL
-            const deviceId = localStorage.getItem('coursebooksAccess');
-            
-            // Clear the access token immediately
-            localStorage.removeItem('coursebooksAccess');
+            // Get deviceId from localStorage 
+            const deviceId = localStorage.getItem('deviceId');
 
+            // If no deviceId, redirect to index
             if (!deviceId) {
                 window.location.href = '/index.html';
                 return;
             }
 
-            // Update the displayed device ID
+            // Update device ID display
             document.getElementById('device-id').textContent = deviceId;
 
-            // Check verification status
-            function fetchVerificationStatus() {
-                fetch(`/check-verification?deviceId=${deviceId}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (!data.verified || !data.permissions?.access_coursebooks) {
-                            window.location.href = '/truemath.html';
-                            return;
-                        }
-
-                        if (data.expiresAt) {
-                            startCountdown(data.expiresAt);
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        window.location.href = '/truemath.html';
-                    });
-            }
-
-            // Accordion functionality remains unchanged
+            // Accordion functionality
             const accordionHeaders = document.querySelectorAll('.accordion-header');
             accordionHeaders.forEach(header => {
                 header.addEventListener('click', function() {
@@ -518,9 +496,30 @@
                 });
             });
 
-            // Start verification checks
-            fetchVerificationStatus();
-            setInterval(fetchVerificationStatus, 5 * 60 * 1000);
+            // Function to check verification and coursebook access
+            function checkAccess() {
+                fetch(`/check-verification?deviceId=${deviceId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (!data.verified || !data.permissions?.access_coursebooks) {
+                            window.location.href = '/truemath.html';
+                            return;
+                        }
+
+                        // Update countdown if we have an expiration
+                        if (data.expiresAt) {
+                            updateCountdown(data.expiresAt);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Access check failed:', error);
+                        window.location.href = '/truemath.html';
+                    });
+            }
+
+            // Check access immediately and every 30 seconds
+            checkAccess();
+            setInterval(checkAccess, 30000);
         });
     </script>
     <script src="js/deviceId.js"></script>
