@@ -340,6 +340,16 @@
       if (coursebooksLink && deviceId) {
           coursebooksLink.href = `coursebooks.html?deviceId=${deviceId}`;
       }
+
+      // Update the coursebooks link to use a click handler instead of direct URL
+      if (coursebooksLink && deviceId) {
+          coursebooksLink.addEventListener('click', function(e) {
+              e.preventDefault();
+              // Store deviceId in localStorage before redirect
+              localStorage.setItem('coursebooksAccess', deviceId);
+              window.location.href = 'coursebooks.html';
+          });
+      }
     });
 
     // Function to fetch verification status from the server

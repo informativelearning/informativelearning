@@ -473,17 +473,39 @@
     
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Get deviceId from URL (same as truemath.html)
-            const deviceId = new URLSearchParams(window.location.search).get('deviceId');
+            // Get deviceId from localStorage instead of URL
+            const deviceId = localStorage.getItem('coursebooksAccess');
+            
+            // Clear the access token immediately
+            localStorage.removeItem('coursebooksAccess');
 
-            // If no deviceId, redirect to index
             if (!deviceId) {
                 window.location.href = '/index.html';
                 return;
             }
 
-            // Update displayed device ID
+            // Update the displayed device ID
             document.getElementById('device-id').textContent = deviceId;
+
+            // Check verification status
+            function fetchVerificationStatus() {
+                fetch(`/check-verification?deviceId=${deviceId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (!data.verified || !data.permissions?.access_coursebooks) {
+                            window.location.href = '/truemath.html';
+                            return;
+                        }
+
+                        if (data.expiresAt) {
+                            startCountdown(data.expiresAt);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        window.location.href = '/truemath.html';
+                    });
+            }
 
             // Accordion functionality remains unchanged
             const accordionHeaders = document.querySelectorAll('.accordion-header');
@@ -495,26 +517,6 @@
                     toggleIcon.textContent = content.classList.contains('active') ? '-' : '+';
                 });
             });
-
-            // Check verification status using same endpoint as truemath.html
-            function fetchVerificationStatus() {
-                fetch(`/check-verification?deviceId=${deviceId}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (!data.verified || !data.permissions?.access_coursebooks) {
-                            window.location.href = '/index.html';
-                            return;
-                        }
-
-                        if (data.expiresAt) {
-                            startCountdown(data.expiresAt);
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        window.location.href = '/index.html';
-                    });
-            }
 
             // Start verification checks
             fetchVerificationStatus();
