@@ -334,6 +334,12 @@
     // Update displayed ID when page loads
     document.addEventListener('DOMContentLoaded', function() {
       document.getElementById('device-id').textContent = deviceId;
+
+      // Update link to include deviceId
+      const coursebooksLink = document.querySelector('a[href="coursebooks.html"]');
+      if (coursebooksLink && deviceId) {
+          coursebooksLink.href = `coursebooks.html?deviceId=${deviceId}`;
+      }
     });
 
     // Function to fetch verification status from the server

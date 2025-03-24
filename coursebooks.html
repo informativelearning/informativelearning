@@ -473,17 +473,19 @@
     
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Get deviceId from localStorage (same as verify.js)
-            const deviceId = localStorage.getItem('deviceId');
+            // Get deviceId from URL (same as truemath.html)
+            const deviceId = new URLSearchParams(window.location.search).get('deviceId');
+
+            // If no deviceId, redirect to index
             if (!deviceId) {
                 window.location.href = '/index.html';
                 return;
             }
 
-            // Update the displayed device ID
+            // Update displayed device ID
             document.getElementById('device-id').textContent = deviceId;
 
-            // Accordion functionality
+            // Accordion functionality remains unchanged
             const accordionHeaders = document.querySelectorAll('.accordion-header');
             accordionHeaders.forEach(header => {
                 header.addEventListener('click', function() {
@@ -494,30 +496,29 @@
                 });
             });
 
-            // Check access permissions
-            function checkAccess() {
-                fetch('/check-verification?deviceId=' + deviceId)
+            // Check verification status using same endpoint as truemath.html
+            function fetchVerificationStatus() {
+                fetch(`/check-verification?deviceId=${deviceId}`)
                     .then(response => response.json())
                     .then(data => {
                         if (!data.verified || !data.permissions?.access_coursebooks) {
-                            window.location.href = '/truemath.html';
+                            window.location.href = '/index.html';
                             return;
                         }
 
-                        // Start timer if we have remaining time
-                        if (data.remainingTime) {
-                            setupAccessTimer(data.remainingTime);
+                        if (data.expiresAt) {
+                            startCountdown(data.expiresAt);
                         }
                     })
                     .catch(error => {
-                        console.error('Access check failed:', error);
-                        window.location.href = '/truemath.html';
+                        console.error('Error:', error);
+                        window.location.href = '/index.html';
                     });
             }
 
-            // Check access immediately and every minute
-            checkAccess();
-            setInterval(checkAccess, 60000);
+            // Start verification checks
+            fetchVerificationStatus();
+            setInterval(fetchVerificationStatus, 5 * 60 * 1000);
         });
     </script>
     <script src="js/deviceId.js"></script>
