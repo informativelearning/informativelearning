@@ -473,13 +473,17 @@
     
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Use deviceId from deviceId.js (available as window.deviceId)
-            if (!window.deviceId) {
+            // Get deviceId from localStorage (same as verify.js)
+            const deviceId = localStorage.getItem('deviceId');
+            if (!deviceId) {
                 window.location.href = '/index.html';
                 return;
             }
 
-            // Handle accordion functionality
+            // Update the displayed device ID
+            document.getElementById('device-id').textContent = deviceId;
+
+            // Accordion functionality
             const accordionHeaders = document.querySelectorAll('.accordion-header');
             accordionHeaders.forEach(header => {
                 header.addEventListener('click', function() {
@@ -490,51 +494,30 @@
                 });
             });
 
-            // Access timer setup
-            function checkAccessAndSetupTimer() {
-                fetch(`/get-access-status?deviceId=${window.deviceId}`)
+            // Check access permissions
+            function checkAccess() {
+                fetch('/check-verification?deviceId=' + deviceId)
                     .then(response => response.json())
                     .then(data => {
-                        if (!data.accessGranted || !data.permissions?.coursebooks) {
+                        if (!data.verified || !data.permissions?.access_coursebooks) {
                             window.location.href = '/truemath.html';
                             return;
                         }
 
+                        // Start timer if we have remaining time
                         if (data.remainingTime) {
                             setupAccessTimer(data.remainingTime);
                         }
                     })
                     .catch(error => {
-                        console.error('Error:', error);
+                        console.error('Access check failed:', error);
                         window.location.href = '/truemath.html';
                     });
             }
 
-            function setupAccessTimer(remainingTime) {
-                const timerElement = document.getElementById('access-timer');
-                const endTime = Date.now() + remainingTime;
-
-                function updateTimer() {
-                    const now = Date.now();
-                    const timeLeft = endTime - now;
-
-                    if (timeLeft <= 0) {
-                        window.location.href = '/truemath.html';
-                        return;
-                    }
-
-                    const minutes = Math.floor(timeLeft / 60000);
-                    const seconds = Math.floor((timeLeft % 60000) / 1000);
-                    timerElement.textContent = `${minutes}m ${seconds}s remaining`;
-                }
-
-                updateTimer();
-                const timerInterval = setInterval(updateTimer, 1000);
-                window.timerInterval = timerInterval;
-            }
-
-            // Start the access check and timer
-            checkAccessAndSetupTimer();
+            // Check access immediately and every minute
+            checkAccess();
+            setInterval(checkAccess, 60000);
         });
     </script>
     <script src="js/deviceId.js"></script>
