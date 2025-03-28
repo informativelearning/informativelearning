@@ -19,16 +19,17 @@
     'testimonial.html'
   ];
   
-  // Define hidden pages that don't trigger dashboard/redirect even for verified users
+  // Define hidden pages that don't trigger dashboard/redirect
   const hiddenPages = ['truemath.html', 'coursebooks.html', 'funinlearning.html'];
   
-  // Determine if we're on the homepage/index by analyzing the full URL
+  // Define protected pages requiring deviceId in the URL for server validation
+  const protectedPages = ['truemath.html', 'funinlearning.html', 'coursebooks.html', 'collegecourses.html'];
+
+  // Determine if we're on the homepage/index
   function isHomePage() {
     const path = window.location.pathname;
     const hostname = window.location.hostname;
     const fullUrl = window.location.href;
-    
-    // Check all possible homepage URL formats
     return path === '/' || 
            path === '' || 
            path === '/index.html' ||
@@ -38,15 +39,16 @@
            fullUrl === `https://${hostname}/`;
   }
 
-  // Get the current page - with special handling for root domain
-  let currentPage;
-  if (isHomePage()) {
-    currentPage = 'index.html';
-  } else {
-    currentPage = window.location.pathname.split('/').pop() || 'index.html';
+  // Get the current page
+  let currentPage = isHomePage() ? 'index.html' : window.location.pathname.split('/').pop() || 'index.html';
+
+  // **New Logic**: Check if on a protected page without deviceId in URL
+  if (protectedPages.includes(currentPage) && !window.location.search.includes('deviceId') && deviceId) {
+    window.location.href = `${currentPage}?deviceId=${encodeURIComponent(deviceId)}`;
+    return;
   }
-  
-  // If no deviceId but on a public page, allow access without redirection
+
+  // If no deviceId but on a public page, allow access
   if (!deviceId && publicPages.includes(currentPage)) {
     return;
   }
@@ -58,38 +60,28 @@
   }
 
   function openDashboard(deviceId) {
-    // Open a new window (starts as about:blank)
     const win = window.open('');
     if (!win) {
       alert('Please allow popups for this site to access the content.');
       return false;
     }
-  
     try {
-      // Set up the basic document structure
       win.document.body.style.margin = '0';
       win.document.body.style.height = '100vh';
       win.document.body.style.padding = '0';
       win.document.body.style.overflow = 'hidden';
-      
-      // Set the title
       win.document.title = 'Dashboard';
-      
-      // Create and set the favicon
       const favicon = win.document.createElement('link');
       favicon.rel = 'icon';
       favicon.type = 'image/x-icon';
       favicon.href = window.location.origin + '/Dashboard-favicon.ico';
       win.document.head.appendChild(favicon);
-      
-      // Create and append the iframe
       const iframe = win.document.createElement('iframe');
       iframe.style.border = 'none';
       iframe.style.width = '100%';
       iframe.style.height = '100%';
       iframe.style.margin = '0';
       iframe.src = `truemath.html?deviceId=${encodeURIComponent(deviceId)}`;
-      
       win.document.body.appendChild(iframe);
       return true;
     } catch (error) {
@@ -99,24 +91,18 @@
       return false;
     }
   }
-  
 
-  // Fetch verification status from the server
+  // Fetch verification status
   fetch(`/check-verification?deviceId=${deviceId}`)
     .then(response => response.json())
     .then(data => {
       if (data.verified) {
-        // If verified but on a hidden page, do nothing
         if (hiddenPages.includes(currentPage)) {
           return;
         }
-        
-        // If verified and not on a hidden page, open dashboard
         if (!hiddenPages.includes(currentPage)) {
-          // Open the Dashboard window
           const opened = openDashboard(deviceId);
           if (opened) {
-            // Redirect the original tab to a random educational site
             const educationalSites = [
               'https://wascouhsd.instructure.com',
               'https://clever.com',
@@ -127,18 +113,14 @@
           }
         }
       } else {
-        // If not verified but on a public page, do nothing
         if (publicPages.includes(currentPage)) {
           return;
         }
-        
-        // If not verified and not on a public page, redirect to index
         window.location.href = 'index.html';
       }
     })
     .catch(error => {
       console.error('Verification check failed:', error);
-      // Only redirect to index if not already on a public page
       if (!publicPages.includes(currentPage)) {
         window.location.href = 'index.html';
       }

@@ -290,7 +290,15 @@
     <div class="premium-links">
       <h2>Sacred Pathways</h2>
       <div class="links-container">
-        <a href="coursebooks.html">Hidden Wisdom (tired of work?)</a>
+        <a href="coursebooks.html" id="coursebooksLink">Coursebooks</a>
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+          const deviceId = localStorage.getItem('deviceId');
+          if (deviceId) {
+            document.getElementById('coursebooksLink').href = `coursebooks.html?deviceId=${encodeURIComponent(deviceId)}`;
+          }
+          });
+          </script>
         <a href="funinlearning.html">Forbidden Knowledge</a>
       </div>
     </div>
