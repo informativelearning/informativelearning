@@ -13,7 +13,6 @@
     'about.html', 
     'contact.html', 
     'course.html', 
-    'coursebooks.html', 
     'detail.html', 
     'feature.html', 
     'team.html', 

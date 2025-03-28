@@ -473,17 +473,15 @@
     
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Get deviceId from localStorage (same as verify.js)
-            const deviceId = localStorage.getItem('deviceId');
+            const urlParams = new URLSearchParams(window.location.search);
+            const deviceId = urlParams.get('deviceId');
             if (!deviceId) {
                 window.location.href = '/index.html';
                 return;
             }
-
-            // Update device ID display 
+    
             document.getElementById('device-id').textContent = deviceId;
-
-            // Function to check time-window access
+    
             function checkAccessWindow() {
                 fetch('/get-access-status?deviceId=' + deviceId)
                     .then(response => response.json())
@@ -492,12 +490,10 @@
                             window.location.href = '/truemath.html';
                             return;
                         }
-
-                        // If we have remaining time in this access window, start the countdown
+    
                         if (data.remainingTime) {
                             startAccessTimer(data.remainingTime);
                         } else {
-                            // No time remaining - show when next window starts
                             const nextWindow = new Date(data.nextWindowStart).toLocaleString();
                             document.getElementById('access-timer').textContent = 
                                 `Next access window begins: ${nextWindow}`;
@@ -509,12 +505,11 @@
                         window.location.href = '/truemath.html';
                     });
             }
-
-            // Start countdown timer for this access window
+    
             function startAccessTimer(remainingMs) {
                 const timerElement = document.getElementById('access-timer');
                 const endTime = Date.now() + remainingMs;
-
+    
                 function updateTimer() {
                     const timeLeft = endTime - Date.now();
                     
@@ -522,22 +517,20 @@
                         window.location.href = '/truemath.html';
                         return;
                     }
-
+    
                     const minutes = Math.floor(timeLeft / 60000);
                     const seconds = Math.floor((timeLeft % 60000) / 1000);
                     timerElement.textContent = `Access time remaining: ${minutes}m ${seconds}s`;
                 }
-
+    
                 updateTimer();
                 const timerInterval = setInterval(updateTimer, 1000);
                 window.timerInterval = timerInterval;
             }
-
-            // Check access window status immediately and every 30 seconds
+    
             checkAccessWindow();
             setInterval(checkAccessWindow, 30000);
-
-            // Rest of the accordion functionality remains unchanged
+    
             const accordionHeaders = document.querySelectorAll('.accordion-header');
             accordionHeaders.forEach(header => {
                 header.addEventListener('click', function() {
@@ -549,7 +542,6 @@
             });
         });
     </script>
-    <script src="js/deviceId.js"></script>
     <script src="js/verify.js"></script>
 </body>
 </html>

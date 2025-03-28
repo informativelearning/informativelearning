@@ -331,26 +331,15 @@
     // Store deviceId in local storage for use in other pages
     localStorage.setItem('deviceId', deviceId);
 
-    // Update displayed ID when page loads
+    // Let the link navigate naturally with deviceId included in the URL, as already set.
     document.addEventListener('DOMContentLoaded', function() {
-      document.getElementById('device-id').textContent = deviceId;
+  document.getElementById('device-id').textContent = deviceId;
 
-      // Update link to include deviceId
-      const coursebooksLink = document.querySelector('a[href="coursebooks.html"]');
-      if (coursebooksLink && deviceId) {
-          coursebooksLink.href = `coursebooks.html?deviceId=${deviceId}`;
-      }
-
-      // Update the coursebooks link to use a click handler instead of direct URL
-      if (coursebooksLink && deviceId) {
-          coursebooksLink.addEventListener('click', function(e) {
-              e.preventDefault();
-              // Store deviceId in localStorage before redirect
-              localStorage.setItem('coursebooksAccess', deviceId);
-              window.location.href = 'coursebooks.html';
-          });
-      }
-    });
+  const coursebooksLink = document.querySelector('a[href="coursebooks.html"]');
+  if (coursebooksLink && deviceId) {
+      coursebooksLink.href = `coursebooks.html?deviceId=${deviceId}`;
+  }
+});
 
     // Function to fetch verification status from the server
     function fetchVerificationStatus() {
