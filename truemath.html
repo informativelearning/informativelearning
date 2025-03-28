@@ -327,27 +327,33 @@
   </svg>
  
   <script>
-    // Get deviceId from URL query parameters
-    const deviceId = new URLSearchParams(window.location.search).get('deviceId');
+    // Get deviceId from URL query parameters and handle validation
+    function initializeDeviceId() {
+      const deviceId = new URLSearchParams(window.location.search).get('deviceId');
 
-    // If no deviceId, redirect to index.html
-    if (!deviceId) {
-      window.location.href = '/index.html';
-      return;
+      // If no deviceId, redirect to index.html
+      if (!deviceId) {
+        window.location.href = '/index.html';
+        return;
+      }
+
+      // Store deviceId in local storage for use in other pages
+      localStorage.setItem('deviceId', deviceId);
+      return deviceId;
     }
 
-    // Store deviceId in local storage for use in other pages
-    localStorage.setItem('deviceId', deviceId);
+    // Initialize deviceId on page load
+    const deviceId = initializeDeviceId();
 
-    // Let the link navigate naturally with deviceId included in the URL, as already set.
+    // Let the link navigate naturally with deviceId included in the URL
     document.addEventListener('DOMContentLoaded', function() {
-  document.getElementById('device-id').textContent = deviceId;
+      document.getElementById('device-id').textContent = deviceId;
 
-  const coursebooksLink = document.querySelector('a[href="coursebooks.html"]');
-  if (coursebooksLink && deviceId) {
-      coursebooksLink.href = `coursebooks.html?deviceId=${deviceId}`;
-  }
-});
+      const coursebooksLink = document.querySelector('a[href="coursebooks.html"]');
+      if (coursebooksLink && deviceId) {
+          coursebooksLink.href = `coursebooks.html?deviceId=${deviceId}`;
+      }
+    });
 
     // Function to fetch verification status from the server
     function fetchVerificationStatus() {
