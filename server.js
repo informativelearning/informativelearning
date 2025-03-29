@@ -15,11 +15,13 @@ app.use(express.json());
 app.use(express.static(__dirname));
 
 // SQLite database setup
-const db = new sqlite3.Database('/app/data/devices.db', (err) => {
+const sqlite3 = require('sqlite3').verbose();
+const dbPath = './devices.db';
+const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
     console.error('Error opening database:', err.message);
   } else {
-    console.log('Connected to the SQLite database.');
+    console.log('Connected to the SQLite database at:', dbPath);
   }
 });
 
