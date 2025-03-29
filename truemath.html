@@ -288,21 +288,11 @@
     </header>
    
     <div class="premium-links">
-      <h2>Sacred Pathways</h2>
+      <h2>Forbidden Knowledge</h2>
       <div class="links-container">
-        <a href="coursebooks.html" id="coursebooksLink">Coursebooks</a>
-        <script>
-        document.addEventListener('DOMContentLoaded', function() {
-          const deviceId = localStorage.getItem('deviceId');
-          if (deviceId) {
-            document.getElementById('coursebooksLink').href = `coursebooks.html?deviceId=${encodeURIComponent(deviceId)}`;
-          }
-          });
-          </script>
-        <a href="funinlearning.html">Forbidden Knowledge</a>
+        <a href="funinlearning.html">Fun in Learning</a>
       </div>
     </div>
-
 
     <!-- Extra device-info section -->
     <div class="device-info">
@@ -345,13 +335,13 @@
     // Initialize deviceId on page load
     const deviceId = initializeDeviceId();
 
-    // Let the link navigate naturally with deviceId included in the URL
+    // Update the single link to include deviceId
     document.addEventListener('DOMContentLoaded', function() {
       document.getElementById('device-id').textContent = deviceId;
 
-      const coursebooksLink = document.querySelector('a[href="coursebooks.html"]');
-      if (coursebooksLink && deviceId) {
-          coursebooksLink.href = `coursebooks.html?deviceId=${deviceId}`;
+      const funInLearningLink = document.querySelector('a[href="funinlearning.html"]');
+      if (funInLearningLink && deviceId) {
+          funInLearningLink.href = `funinlearning.html?deviceId=${deviceId}`;
       }
     });
 
