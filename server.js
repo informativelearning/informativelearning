@@ -366,30 +366,76 @@ app.get('/get-access-status', (req, res) => {
 
 // Set up proxy for Ultraviolet
 const proxy = httpProxy.createProxyServer();
-app.use('/proxy', (req, res) => {
-  proxy.web(req, res, { target: 'http://localhost:8081' });
-});
 
-// Start Ultraviolet and Express servers
-let ultravioletApp;
-let server;
+// Initialize variables for lazy loading Ultraviolet
+let ultravioletApp = null;
+let ultravioletInitializing = false;
+let ultravioletInitPromise = null;
 
-(async () => {
-  ultravioletApp = (await import('./ultraviolet/src/index.js')).default;
-  await ultravioletApp.listen({ port: 8081, host: 'localhost' });
-  console.log('Ultraviolet running on port 8081');
-
-  const PORT = process.env.PORT || 8080;
-  server = http.createServer(app);
-  server.on('upgrade', (req, socket, head) => {
-    if (req.url.startsWith('/proxy')) {
-      proxy.ws(req, socket, head, { target: 'http://localhost:8081' });
+// Function to initialize Ultraviolet
+async function initUltraviolet() {
+  if (ultravioletApp) return ultravioletApp;
+  
+  if (ultravioletInitializing) {
+    // If initialization is in progress, wait for it to complete
+    return await ultravioletInitPromise;
+  }
+  
+  ultravioletInitializing = true;
+  ultravioletInitPromise = new Promise(async (resolve, reject) => {
+    try {
+      console.log('Initializing Ultraviolet...');
+      const uv = (await import('./ultraviolet/src/index.js')).default;
+      await uv.listen({ port: 8081, host: 'localhost' });
+      console.log('Ultraviolet initialized and running on port 8081');
+      ultravioletApp = uv;
+      resolve(ultravioletApp);
+    } catch (error) {
+      console.error('Failed to initialize Ultraviolet:', error);
+      ultravioletInitializing = false;
+      reject(error);
     }
   });
-  server.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-  });
-})();
+  
+  return await ultravioletInitPromise;
+}
+
+// Modify proxy middleware to lazy-load Ultraviolet
+app.use('/proxy', async (req, res, next) => {
+  try {
+    if (!ultravioletApp) {
+      await initUltraviolet();
+    }
+    // Continue with proxying the request
+    proxy.web(req, res, { target: 'http://localhost:8081' });
+  } catch (error) {
+    console.error('Error in Ultraviolet proxy:', error);
+    res.status(500).send('Proxy service unavailable');
+  }
+});
+
+// Start Express server
+const PORT = process.env.PORT || 8080;
+const server = http.createServer(app);
+
+// Update websocket handling with lazy loading
+server.on('upgrade', async (req, socket, head) => {
+  if (req.url.startsWith('/proxy')) {
+    try {
+      if (!ultravioletApp) {
+        await initUltraviolet();
+      }
+      proxy.ws(req, socket, head, { target: 'http://localhost:8081' });
+    } catch (error) {
+      console.error('Error handling WebSocket upgrade:', error);
+      socket.destroy();
+    }
+  }
+});
+
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
 
 // Graceful shutdown
 function shutdown() {
