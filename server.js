@@ -3,7 +3,7 @@ console.log('Starting server...');
 const express = require('express');
 const path = require('path');
 const http = require('http');
-const httpProxy = require('http-proxy');
+// const httpProxy = require('http-proxy'); // Commented out - Ultraviolet related
 const fs = require('fs');
 const app = express();
 require('dotenv').config();
@@ -365,27 +365,29 @@ app.get('/get-access-status', (req, res) => {
 });
 
 // Set up proxy for Ultraviolet
-const proxy = httpProxy.createProxyServer();
-app.use('/proxy', (req, res) => {
-  proxy.web(req, res, { target: 'http://localhost:8081' });
-});
+// const proxy = httpProxy.createProxyServer();
+// app.use('/proxy', (req, res) => {
+//   proxy.web(req, res, { target: 'http://localhost:8081' });
+// });
 
 // Start Ultraviolet and Express servers
-let ultravioletApp;
+// let ultravioletApp;
 let server;
 
 (async () => {
-  ultravioletApp = (await import('./ultraviolet/src/index.js')).default;
-  await ultravioletApp.listen({ port: 8081, host: 'localhost' });
-  console.log('Ultraviolet running on port 8081');
+  // ultravioletApp = (await import('./ultraviolet/src/index.js')).default;
+  // await ultravioletApp.listen({ port: 8081, host: 'localhost' });
+  // console.log('Ultraviolet running on port 8081');
 
   const PORT = process.env.PORT || 8080;
   server = http.createServer(app);
-  server.on('upgrade', (req, socket, head) => {
-    if (req.url.startsWith('/proxy')) {
-      proxy.ws(req, socket, head, { target: 'http://localhost:8081' });
-    }
-  });
+  
+  // server.on('upgrade', (req, socket, head) => {
+  //   if (req.url.startsWith('/proxy')) {
+  //     proxy.ws(req, socket, head, { target: 'http://localhost:8081' });
+  //   }
+  // });
+  
   server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
   });
@@ -394,7 +396,7 @@ let server;
 // Graceful shutdown
 function shutdown() {
   console.log("SIGTERM signal received: closing servers");
-  if (ultravioletApp) ultravioletApp.close();
+  // if (ultravioletApp) ultravioletApp.close();
   if (server) server.close();
   db.close((err) => {
     if (err) {
