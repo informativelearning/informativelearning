@@ -3,6 +3,8 @@ console.log('Starting server...');
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const http = require('http');
+const httpProxy = require('http-proxy');
 const app = express();
 require('dotenv').config();
 
@@ -349,14 +351,38 @@ app.get('/get-access-status', (req, res) => {
   });
 });
 
-// Start server
-const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+// Set up proxy for Ultraviolet
+const proxy = httpProxy.createProxyServer();
+app.use('/proxy', (req, res) => {
+  proxy.web(req, res, { target: 'http://localhost:8081' });
 });
 
+// Start Ultraviolet and Express servers
+let ultravioletApp;
+let server;
+
+(async () => {
+  ultravioletApp = (await import('./ultraviolet/src/index.js')).default;
+  await ultravioletApp.listen({ port: 8081, host: 'localhost' });
+  console.log('Ultraviolet running on port 8081');
+
+  const PORT = process.env.PORT || 8080;
+  server = http.createServer(app);
+  server.on('upgrade', (req, socket, head) => {
+    if (req.url.startsWith('/proxy')) {
+      proxy.ws(req, socket, head, { target: 'http://localhost:8081' });
+    }
+  });
+  server.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+})();
+
 // Graceful shutdown
-process.on('SIGINT', () => {
+function shutdown() {
+  console.log("SIGTERM signal received: closing servers");
+  if (ultravioletApp) ultravioletApp.close();
+  if (server) server.close();
   db.close((err) => {
     if (err) {
       console.error('Error closing database:', err.message);
@@ -365,4 +391,7 @@ process.on('SIGINT', () => {
     }
     process.exit(0);
   });
-});
+}
+
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);
