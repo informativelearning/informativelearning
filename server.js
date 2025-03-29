@@ -1,10 +1,10 @@
 console.log('Starting server...');
 
 const express = require('express');
-const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const http = require('http');
 const httpProxy = require('http-proxy');
+const fs = require('fs');
 const app = express();
 require('dotenv').config();
 
@@ -14,9 +14,20 @@ app.use(express.json());
 // Serve static files from the current directory
 app.use(express.static(__dirname));
 
+// Set database path dynamically
+const dbPath = process.env.FLY_APP_NAME ? '/app/data/devices.db' : './devices.db';
+
+// Create the data directory on Fly.io if it doesn't exist
+if (process.env.FLY_APP_NAME) {
+  const dataDir = '/app/data';
+  if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true });
+    console.log('Created data directory on Fly.io at:', dataDir);
+  }
+}
+
 // SQLite database setup
 const sqlite3 = require('sqlite3').verbose();
-const dbPath = './devices.db';
 const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
     console.error('Error opening database:', err.message);
