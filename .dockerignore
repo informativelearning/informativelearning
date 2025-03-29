@@ -1,31 +1,12 @@
-# Fly.io config
-fly.toml
-
-# Node
-node_modules
-npm-debug.log
-yarn-debug.log
-yarn-error.log
-
-# SQLite database files
-*.db
-*.sqlite
-*.sqlite3
-
-# Environment variables
-.env
-.env.*
-
-# Git
-.git
+.dockerignore
+Dockerfile
+.eslintignore
+.eslintrc.json
 .gitignore
-
-# IDE/Editor folders
-.vscode
-.idea
-*.swp
-*.swo
-
-# Logs
-logs
-*.log
+.prettierignore
+.prettierrc.json
+.replit
+LICENSE
+README.md
+replit.nix
+.github/

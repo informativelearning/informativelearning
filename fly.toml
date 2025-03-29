@@ -1,49 +1,36 @@
-# fly.toml app configuration file generated for informativecourses on 2025-02-27T05:01:42Z
-#
-# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
-#
-app = "informativecourses"
-primary_region = "sjc"
+# fly.toml app configuration file
+app = "informativecourses" # Your Fly.io app name
+primary_region = "sjc"    # Your preferred region (change if needed)
 
-[env]
-  PORT = "8080"
-
+# Define build strategy (using our Dockerfile)
 [build]
   dockerfile = "Dockerfile"
- 
+
+# Define environment variables
+# PORT tells the app inside the container which port to listen on.
+# Fly.io automatically directs external traffic (port 80/443) to this internal port.
+[env]
+  PORT = "8080"
+  # NODE_ENV = "production" # Already set in Dockerfile, so optional here
+
+# Define the main web service
 [http_service]
-  internal_port = 8080
+  internal_port = 8080 # Port the app listens on INSIDE the container (matches ENV PORT and Dockerfile EXPOSE)
   force_https = true
-  auto_stop_machines = false
+  auto_stop_machines = false # Keep running even if idle (as you had before)
   auto_start_machines = true
-  min_machines_running = 0
-  processes = ["app"]
+  min_machines_running = 0   # Start with 0 for free tier compatibility (change to 1 if needed)
+  processes = ["app"]      # Matches the default process group name
 
-[[services]]
-  protocol = "tcp"
-  internal_port = 8080
-  processes = ["app"]
-
-  # This block meets the snippet requirements.
-  [[services.ports]]
-    port = 80
-    handlers = ["http"]
-
-  [[services.ports]]
-    port = 443
-    handlers = ["tls", "http"]
-
-  [services.concurrency]
-    type = "connections"
-    hard_limit = 25
-    soft_limit = 20
-
+# Define the VM size (start small, scale up if needed)
 [[vm]]
-  memory = "1gb"
+  memory = "256mb"  # Standard free tier memory
   cpu_kind = "shared"
   cpus = 1
-  memory_mb = 1024
+  # You can increase memory later with `fly scale vm memory=512` etc.
 
+# Define the persistent volume mount for the SQLite database
+# This ensures your devices.db file persists across deployments/restarts
 [mounts]
-  source = "data"
-  destination = "/app/data"
+  source = "data" # Name of the volume on Fly.io
+  destination = "/app/data" # Where the volume is mounted inside the container
