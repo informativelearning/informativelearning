@@ -17,73 +17,70 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const localStaticPath = join(__dirname, "..", "static");
 console.log(`[DEBUG] User static path: ${localStaticPath}`);
+console.log(`[DEBUG] UV public path: ${uvPublicPath}`);
 
 // --- Fastify Setup ---
-console.log('[INIT - Fix Welcome Route] Creating Fastify instance...');
+console.log('[INIT - Combined Static] Creating Fastify instance...');
 const fastify = Fastify({
     logger: true,
     serverFactory: (handler, opts) => { /* ... Keep working Wisp serverFactory ... */ }
 });
-console.log('[INIT - Fix Welcome Route] Fastify instance created.');
+console.log('[INIT - Combined Static] Fastify instance created.');
 
 // --- Route Definitions ---
 
-// 1. Redirect ROOT '/' requests to '/welcome' (Keep this)
-console.log('[INIT - Fix Welcome Route] Registering / redirect...');
+// 1. Redirect ROOT '/' requests to '/welcome'
+console.log('[INIT - Combined Static] Registering / redirect...');
 fastify.get('/', (request, reply) => {
     console.log('[ROUTE] Redirecting / to /welcome');
     reply.code(302).redirect('/welcome');
 });
-console.log('[INIT - Fix Welcome Route] Registered / redirect OK.');
+console.log('[INIT - Combined Static] Registered / redirect OK.');
 
 // 2. Explicitly serve YOUR index.html for GET /welcome requests
-console.log('[INIT - Fix Welcome Route] Registering GET /welcome handler...');
+console.log('[INIT - Combined Static] Registering GET /welcome handler...');
 fastify.get('/welcome', (request, reply) => {
     console.log('[ROUTE] Serving static/index.html for GET /welcome');
-    // Use reply.sendFile, requires decorateReply:true on a static plugin instance
-    // We'll use the /welcome static plugin instance below for this.
-    // For now, just send the file path. Let the static handler manage sending.
-     // This explicit route might not even be needed if the static index works correctly,
-     // but let's add it for clarity and remove if redundant later.
-     // We actually rely on the static handler below with index:true
-     // This explicit route is likely NOT the fix. Let's remove it for now and focus on the static handler.
+    // Needs decorateReply:true on the static plugin below
+    const indexPath = join(localStaticPath, 'index.html');
+     if (fs.existsSync(indexPath)) {
+        // Relying on decoration from the combined handler below
+        return reply.sendFile('index.html', localStaticPath);
+     } else {
+        console.error(`[ERROR] Cannot find educational index.html at ${indexPath}`);
+        reply.code(404).send('Educational page not found.');
+     }
 });
-// console.log('[INIT - Fix Welcome Route] Registered GET /welcome handler OK.'); // Removed for now
+console.log('[INIT - Combined Static] Registered GET /welcome handler OK.');
 
-// 3. Serve YOUR educational page assets AND index.html from the /welcome path prefix
-console.log('[INIT - Fix Welcome Route] Registering /welcome static handler...');
+// 3. Serve ALL OTHER static assets (yours AND UV's) from the root '/'
+//    using multiple roots. The first root found with the file wins.
+console.log('[INIT - Combined Static] Registering combined / static handler...');
 fastify.register(fastifyStatic, {
-    root: localStaticPath,      // Serve from your static folder
-    prefix: '/welcome',         // Only match URLs starting with /welcome
-    decorateReply: true,        // <<< ENABLE DECORATION
-    index: "index.html",        // Serve static/index.html for /welcome/
-    // Try explicitly setting serveDotFiles if favicon isn't served otherwise
-    // dotfiles: 'allow',
+    // Provide roots in order of priority
+    root: [localStaticPath, uvPublicPath], // Check your 'static' first, then UV's public
+    prefix: '/',
+    decorateReply: true, // Decorate ONCE here
+    // No index: "index.html" - handle / and /welcome explicitly above
+    // Wildcard must be true (or default) to serve subdirectories like /css /js /img /lib
+    wildcard: true,
+    // Optional: Could add allowedPath here if needed, but multiple roots make it complex
 });
-console.log('[INIT - Fix Welcome Route] Registered /welcome static handler OK.');
+console.log('[INIT - Combined Static] Registered combined / static handler OK.');
 
-
-// 4. Serve standard UV Frontend & Assets from /proxy/ (Keep this)
-console.log('[INIT - Fix Welcome Route] Registering /proxy/ static handler...');
-fastify.register(fastifyStatic, {
-    root: uvPublicPath,
-    prefix: '/proxy/',
-    decorateReply: false, // Decoration done above
-    index: "index.html",
-});
-console.log('[INIT - Fix Welcome Route] Registered /proxy/ static handler OK.');
-
-// 5. Serve Core UV/Bare/Epoxy engine assets from their ROOT paths (Keep this)
-console.log('[INIT - Fix Welcome Route] Registering /uv/ static handler...');
+// 4. Serve Core UV/Bare/Epoxy engine assets from their specific root paths
+//    These need to be separate as they come from different package directories
+console.log('[INIT - Combined Static] Registering /uv/ static handler...');
 fastify.register(fastifyStatic, { root: uvPath, prefix: "/uv/", decorateReply: false });
-console.log('[INIT - Fix Welcome Route] Registered /uv/ static handler OK.');
+console.log('[INIT - Combined Static] Registered /uv/ static handler OK.');
 // ... register /epoxy/ and /baremux/ ...
-console.log('[INIT - Fix Welcome Route] Registering /epoxy/ static handler...');
+console.log('[INIT - Combined Static] Registering /epoxy/ static handler...');
 fastify.register(fastifyStatic, { root: epoxyPath, prefix: "/epoxy/", decorateReply: false });
-console.log('[INIT - Fix Welcome Route] Registered /epoxy/ static handler OK.');
-console.log('[INIT - Fix Welcome Route] Registering /baremux/ static handler...');
+console.log('[INIT - Combined Static] Registered /epoxy/ static handler OK.');
+console.log('[INIT - Combined Static] Registering /baremux/ static handler...');
 fastify.register(fastifyStatic, { root: baremuxPath, prefix: "/baremux/", decorateReply: false });
-console.log('[INIT - Fix Welcome Route] Registered /baremux/ static handler OK.');
+console.log('[INIT - Combined Static] Registered /baremux/ static handler OK.');
+
 
 // --- Server Start & Shutdown Logic ---
 // ... (Keep the same) ...
