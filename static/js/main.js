@@ -134,29 +134,3 @@
     });
     
 })(jQuery);
-
-// Track user interactions for the secret code
-let keySequence = "";
-let logoClickCount = 0;
-let secretActivated = false;
-
-// Listen for keyboard input to detect the secret phrase
-document.addEventListener('keydown', function(event) {
-    // Add the pressed key to the sequence
-    keySequence += event.key.toLowerCase();
-    
-    // Check if the sequence contains our secret phrase
-    if (keySequence.includes("cogito")) {
-        // Reset the key sequence to prevent multiple triggers
-        keySequence = "";
-        // Set the first condition as met
-        secretActivated = true;
-        console.log("Secret phrase detected! Now click the logo 3 times.");
-    }
-    
-    // Limit the length of the key sequence to prevent memory issues
-    if (keySequence.length > 100) {
-        keySequence = keySequence.substr(keySequence.length - 50);
-    }
-});
-
