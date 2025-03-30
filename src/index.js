@@ -4,13 +4,11 @@ import { hostname } from "node:os";
 import wisp from "wisp-server-node";
 import Fastify from "fastify";
 import fastifyStatic from "@fastify/static";
-
 // static paths
 import { publicPath } from "ultraviolet-static";
 import { uvPath } from "@titaniumnetwork-dev/ultraviolet";
 import { epoxyPath } from "@mercuryworkshop/epoxy-transport";
 import { baremuxPath } from "@mercuryworkshop/bare-mux/node";
-
 const fastify = Fastify({
 	serverFactory: (handler) => {
 		return createServer()
@@ -25,37 +23,35 @@ const fastify = Fastify({
 			});
 	},
 });
-
 fastify.register(fastifyStatic, {
 	root: publicPath,
 	decorateReply: true,
 });
-
 fastify.get("/uv/uv.config.js", (req, res) => {
 	return res.sendFile("uv/uv.config.js", publicPath);
 });
-
 fastify.register(fastifyStatic, {
 	root: uvPath,
 	prefix: "/uv/",
 	decorateReply: false,
 });
-
 fastify.register(fastifyStatic, {
 	root: epoxyPath,
 	prefix: "/epoxy/",
 	decorateReply: false,
 });
-
 fastify.register(fastifyStatic, {
 	root: baremuxPath,
 	prefix: "/baremux/",
 	decorateReply: false,
 });
-
+fastify.register(fastifyStatic, {
+  root: join(process.cwd(), "static"),
+  prefix: "/welcome/",
+  decorateReply: false,
+});
 fastify.server.on("listening", () => {
 	const address = fastify.server.address();
-
 	// by default we are listening on 0.0.0.0 (every interface)
 	// we just need to list a few
 	console.log("Listening on:");
@@ -67,20 +63,15 @@ fastify.server.on("listening", () => {
 		}:${address.port}`
 	);
 });
-
 process.on("SIGINT", shutdown);
 process.on("SIGTERM", shutdown);
-
 function shutdown() {
 	console.log("SIGTERM signal received: closing HTTP server");
 	fastify.close();
 	process.exit(0);
 }
-
 let port = parseInt(process.env.PORT || "");
-
 if (isNaN(port)) port = 8080;
-
 fastify.listen({
 	port: port,
 	host: "0.0.0.0",
