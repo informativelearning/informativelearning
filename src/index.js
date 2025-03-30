@@ -1,47 +1,87 @@
-// --- Imports ---
 import { createServer } from "node:http";
+import { join } from "node:path";
 import { hostname } from "node:os";
+import wisp from "wisp-server-node";
 import Fastify from "fastify";
 import fastifyStatic from "@fastify/static";
-import wisp from "wisp-server-node";
-// UV Core Imports
-import { publicPath as uvPublicPath } from "ultraviolet-static";
+
+// static paths
+import { publicPath } from "ultraviolet-static";
 import { uvPath } from "@titaniumnetwork-dev/ultraviolet";
 import { epoxyPath } from "@mercuryworkshop/epoxy-transport";
 import { baremuxPath } from "@mercuryworkshop/bare-mux/node";
-// TODO: Add imports for verification later (sqlite3, basic-auth, path, fs)
 
-// --- Fastify Setup ---
-console.log('[INIT - Stable + Verify Prep] Creating Fastify instance...');
 const fastify = Fastify({
-    logger: true,
-    serverFactory: (handler, opts) => { // Keep the working factory
-        console.log('[INIT - Stable + Verify Prep] Server factory called.');
-        const server = createServer((req, res) => { /* headers */ });
-        server.on('upgrade', (req, socket, head) => { /* wisp */ });
-        return server;
-    }
+	serverFactory: (handler) => {
+		return createServer()
+			.on("request", (req, res) => {
+				res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+				res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
+				handler(req, res);
+			})
+			.on("upgrade", (req, socket, head) => {
+				if (req.url.endsWith("/wisp/")) wisp.routeRequest(req, socket, head);
+				else socket.end();
+			});
+	},
 });
-console.log('[INIT - Stable + Verify Prep] Fastify instance created.');
 
-// --- Route Definitions ---
+fastify.register(fastifyStatic, {
+	root: publicPath,
+	decorateReply: true,
+});
 
-// TODO: Add Verification API Routes (/is-verified, /verify-device, /admin.html etc.) later
+fastify.get("/uv/uv.config.js", (req, res) => {
+	return res.sendFile("uv/uv.config.js", publicPath);
+});
 
-// Serve standard UV Frontend & Assets (including verify.js if it's part of uvPublicPath)
-console.log('[INIT - Stable + Verify Prep] Registering / (UV Frontend & Assets) static handler...');
-fastify.register(fastifyStatic, { root: uvPublicPath, prefix: '/', decorateReply: true, index: "index.html" });
-console.log('[INIT - Stable + Verify Prep] Registered / (UV Frontend & Assets) static handler OK.');
+fastify.register(fastifyStatic, {
+	root: uvPath,
+	prefix: "/uv/",
+	decorateReply: false,
+});
 
-// Serve Core UV/Bare/Epoxy engine assets
-console.log('[INIT - Stable + Verify Prep] Registering core script handlers...');
-fastify.register(fastifyStatic, { root: uvPath, prefix: "/uv/", decorateReply: false, wildcard: false });
-fastify.register(fastifyStatic, { root: epoxyPath, prefix: "/epoxy/", decorateReply: false, wildcard: false });
-fastify.register(fastifyStatic, { root: baremuxPath, prefix: "/baremux/", decorateReply: false, wildcard: false });
-console.log('[INIT - Stable + Verify Prep] Registered core script handlers OK.');
+fastify.register(fastifyStatic, {
+	root: epoxyPath,
+	prefix: "/epoxy/",
+	decorateReply: false,
+});
 
-// --- Server Start & Shutdown Logic ---
-// ... (Keep the same) ...
-const port = parseInt(process.env.PORT || "8080");
-fastify.listen({ port: port, host: "0.0.0.0" }, (err, address) => { /* ... */ });
-// ... (Keep shutdown logic) ...
+fastify.register(fastifyStatic, {
+	root: baremuxPath,
+	prefix: "/baremux/",
+	decorateReply: false,
+});
+
+fastify.server.on("listening", () => {
+	const address = fastify.server.address();
+
+	// by default we are listening on 0.0.0.0 (every interface)
+	// we just need to list a few
+	console.log("Listening on:");
+	console.log(`\thttp://localhost:${address.port}`);
+	console.log(`\thttp://${hostname()}:${address.port}`);
+	console.log(
+		`\thttp://${
+			address.family === "IPv6" ? `[${address.address}]` : address.address
+		}:${address.port}`
+	);
+});
+
+process.on("SIGINT", shutdown);
+process.on("SIGTERM", shutdown);
+
+function shutdown() {
+	console.log("SIGTERM signal received: closing HTTP server");
+	fastify.close();
+	process.exit(0);
+}
+
+let port = parseInt(process.env.PORT || "");
+
+if (isNaN(port)) port = 8080;
+
+fastify.listen({
+	port: port,
+	host: "0.0.0.0",
+});
