@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     iframe.style.margin = '0';
                     iframe.referrerPolicy = 'no-referrer';
                     iframe.allow = 'fullscreen';
-                    iframe.src = window.location.origin + '/scientific.html';
+                    iframe.src = window.location.origin + 'scientific.html';
                     
                     win.document.body.appendChild(iframe);
                 } catch (error) {
