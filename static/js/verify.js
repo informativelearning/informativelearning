@@ -123,7 +123,7 @@
     .catch(error => {
       console.error('Verification check failed:', error);
       if (!publicPages.includes(currentPage)) {
-        window.location.href = 'index.html';
+        window.location.href = 'homepage.html';
       }
     });
 })();
