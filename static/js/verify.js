@@ -11,7 +11,8 @@
   const publicPages = [
     'index.html', 
     'about.html', 
-    'contact.html', 
+    'contact.html',
+    'homepage.html', 
     'course.html', 
     'detail.html', 
     'feature.html', 
