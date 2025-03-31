@@ -351,14 +351,14 @@
         .then(response => response.json())
         .then(data => {
           if (!data.verified || data.hasExpired) {
-            window.location.href = '/index.html';
+            window.location.href = '/homepage.html';
           } else if (data.expiresAt) {
             startCountdown(data.expiresAt);
           }
         })
         .catch(error => {
           console.error('Error fetching verification status:', error);
-          window.location.href = '/index.html';
+          window.location.href = '/homepage.html';
         });
     }
 
