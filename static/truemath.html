@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SANCTUM</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Mono&display=swap');
+   
+    :root {
+      --primary: #0f0;
+      --background: #000;
+      --accent: #800080;
+      --text: #e0e0e0;
+      --hover: #ff00ff;
+    }
+   
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Space Mono', monospace;
+    }
+   
+    body {
+      background-color: var(--background);
+      color: var(--text);
+      background-image:
+        radial-gradient(circle at 10% 20%, rgba(128, 0, 128, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 90% 80%, rgba(0, 255, 0, 0.08) 0%, transparent 50%);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+   
+    .noise {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.1'/%3E%3C/svg%3E");
+      pointer-events: none;
+      opacity: 0.05;
+      z-index: 100;
+    }
+   
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 40px 20px;
+      position: relative;
+      z-index: 10;
+    }
+   
+    header {
+      margin-bottom: 60px;
+      position: relative;
+    }
+   
+    h1 {
+      font-size: 3.5rem;
+      letter-spacing: -2px;
+      margin-bottom: 10px;
+      color: var(--primary);
+      text-shadow: 0 0 10px rgba(0, 255, 0, 0.7);
+      position: relative;
+    }
+   
+    h1::after {
+      content: "SANCTUM";
+      position: absolute;
+      left: 2px;
+      top: 2px;
+      color: var(--accent);
+      z-index: -1;
+      opacity: 0.7;
+    }
+   
+    .subtitle {
+      font-size: 1rem;
+      margin-bottom: 30px;
+      opacity: 0.8;
+      max-width: 600px;
+      line-height: 1.6;
+      border-left: 3px solid var(--primary);
+      padding-left: 15px;
+    }
+   
+    .premium-links {
+      margin: 40px 0;
+    }
+   
+    .premium-links h2 {
+      font-size: 1.5rem;
+      margin-bottom: 20px;
+      color: var(--accent);
+      position: relative;
+      display: inline-block;
+    }
+   
+    .premium-links h2::before {
+      content: ">>";
+      position: absolute;
+      left: -30px;
+      color: var(--primary);
+      opacity: 0.7;
+    }
+   
+    .links-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+    }
+   
+    .premium-links a {
+      display: block;
+      padding: 20px;
+      text-decoration: none;
+      color: var(--text);
+      background: rgba(20, 20, 20, 0.7);
+      border: 1px solid rgba(128, 0, 128, 0.3);
+      border-radius: 3px;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+   
+    .premium-links a::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(45deg, transparent 65%, rgba(0, 255, 0, 0.1) 70%, transparent 75%);
+      background-size: 200% 200%;
+      animation: shine 3s infinite;
+    }
+   
+    .premium-links a:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 5px 15px rgba(0, 255, 0, 0.2);
+      border-color: var(--primary);
+    }
+   
+    .premium-links a::after {
+      content: "→";
+      position: absolute;
+      right: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+      opacity: 0;
+      transition: all 0.3s ease;
+    }
+   
+    .premium-links a:hover::after {
+      opacity: 1;
+      right: 15px;
+    }
+   
+    .device-info {
+      margin-top: 60px;
+      padding: 20px;
+      background: rgba(20, 20, 20, 0.5);
+      border-radius: 3px;
+      border-left: 3px solid var(--accent);
+    }
+   
+    .device-info p {
+      margin: 10px 0;
+      font-size: 0.9rem;
+      display: flex;
+      justify-content: space-between;
+    }
+   
+    #verification-status {
+      color: var(--primary);
+      position: relative;
+    }
+   
+    #verification-status::after {
+      content: "";
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      background-color: var(--primary);
+      border-radius: 50%;
+      margin-left: 8px;
+      animation: pulse 2s infinite;
+    }
+   
+    .eye {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: radial-gradient(circle at center, #800080 30%, #000 31%, #000 40%, #800080 41%, #800080 60%, #000 61%);
+      box-shadow: 0 0 20px rgba(128, 0, 128, 0.7);
+      animation: blink 6s infinite;
+    }
+   
+    .labyrinth-symbol {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      width: 80px;
+      height: 80px;
+      opacity: 0.2;
+      z-index: 1;
+    }
+   
+    footer {
+      margin-top: 60px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(128, 0, 128, 0.3);
+      font-size: 0.8rem;
+      text-align: center;
+      opacity: 0.6;
+    }
+   
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.3; }
+      100% { opacity: 1; }
+    }
+   
+    @keyframes shine {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+   
+    @keyframes blink {
+      0%, 100% { transform: scale(1); }
+      95% { transform: scale(1); }
+      97% { transform: scale(0.1); }
+      99% { transform: scale(1); }
+    }
+   
+    @keyframes float {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-10px) rotate(5deg); }
+    }
+   
+    /* Screen flicker animation */
+    body::after {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 255, 0, 0.03);
+      opacity: 0;
+      pointer-events: none;
+      z-index: 1000;
+      animation: flicker 10s infinite;
+    }
+   
+    @keyframes flicker {
+      0%, 100% { opacity: 0; }
+      98% { opacity: 0; }
+      98.5% { opacity: 0.5; }
+      99% { opacity: 0; }
+    }
+   
+    /* Responsive */
+    @media (max-width: 768px) {
+      h1 {
+        font-size: 2.5rem;
+      }
+     
+      .links-container {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="noise"></div>
+ 
+  <div class="container">
+    <header>
+      <h1>SANCTUM</h1>
+      <p class="subtitle">Your consciousness has been verified. The paths now open before you.</p>
+      <div class="eye"></div>
+    </header>
+   
+    <div class="premium-links">
+      <h2>Forbidden Knowledge</h2>
+      <div class="links-container">
+        <a href="funinlearning.html">Fun in Learning</a>
+      </div>
+    </div>
+
+    <!-- Extra device-info section -->
+    <div class="device-info">
+      <p>Vessel Identification: <span id="device-id">████-████-████</span></p>
+      <p>Consciousness Status: <span id="verification-status">Synchronized</span></p>
+      <p>Time Remaining: <span id="countdown">Checking...</span></p>
+    </div>
+   
+    <footer>
+      <p>The labyrinth watches. The labyrinth knows.</p>
+    </footer>
+  </div>
+ 
+  <svg class="labyrinth-symbol" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <path d="M50,10 C25,10 10,25 10,50 C10,75 25,90 50,90 C75,90 90,75 90,50 C90,25 75,10 50,10 Z M50,20 C70,20 80,30 80,50 C80,70 70,80 50,80 C30,80 20,70 20,50 C20,30 30,20 50,20 Z M50,30 C35,30 30,35 30,50 C30,65 35,70 50,70 C65,70 70,65 70,50 C70,35 65,30 50,30 Z M50,40 C40,40 40,45 40,50 C40,55 45,60 50,60 C55,60 60,55 60,50 C60,45 60,40 50,40 Z"
+          fill="none"
+          stroke="#800080"
+          stroke-width="1" />
+    <circle cx="50" cy="50" r="5" fill="#0f0" opacity="0.7">
+      <animate attributeName="opacity" values="0.7;0.2;0.7" dur="5s" repeatCount="indefinite" />
+    </circle>
+  </svg>
+ 
+  <script>
+    // Get deviceId from URL query parameters and handle validation
+    function initializeDeviceId() {
+      const deviceId = new URLSearchParams(window.location.search).get('deviceId');
+
+      // If no deviceId, redirect to index.html
+      if (!deviceId) {
+        window.location.href = '/index.html';
+        return;
+      }
+
+      // Store deviceId in local storage for use in other pages
+      localStorage.setItem('deviceId', deviceId);
+      return deviceId;
+    }
+
+    // Initialize deviceId on page load
+    const deviceId = initializeDeviceId();
+
+    // Update the single link to include deviceId
+    document.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('device-id').textContent = deviceId;
+
+      const funInLearningLink = document.querySelector('a[href="funinlearning.html"]');
+      if (funInLearningLink && deviceId) {
+          funInLearningLink.href = `funinlearning.html?deviceId=${deviceId}`;
+      }
+    });
+
+    // Function to fetch verification status from the server
+    function fetchVerificationStatus() {
+      fetch(`/check-verification?deviceId=${deviceId}`)
+        .then(response => response.json())
+        .then(data => {
+          if (!data.verified || data.hasExpired) {
+            window.location.href = '/index.html';
+          } else if (data.expiresAt) {
+            startCountdown(data.expiresAt);
+          }
+        })
+        .catch(error => {
+          console.error('Error fetching verification status:', error);
+          window.location.href = '/index.html';
+        });
+    }
+
+    // Function to start and update the countdown
+    function startCountdown(expiresAt) {
+      const countdownElement = document.getElementById('countdown');
+
+      function updateCountdown() {
+        const now = Date.now();
+        const timeLeft = expiresAt - now;
+
+        if (timeLeft <= 0) {
+          // Verification has expired
+          countdownElement.textContent = 'Verification expired';
+          window.location.href = '/index.html';
+        } else {
+          // Calculate days, hours, minutes, seconds
+          const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+          const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+          const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+          const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+
+          // Display the countdown
+          countdownElement.textContent = `Verification expires in: ${days}d ${hours}h ${minutes}m ${seconds}s`;
+        }
+      }
+
+      // Update immediately and then every second
+      updateCountdown();
+      setInterval(updateCountdown, 1000);
+    }
+
+    // Fetch status on page load
+    fetchVerificationStatus();
+
+    // Periodically recheck status every 5 minutes (300,000 ms)
+    setInterval(fetchVerificationStatus, 5 * 60 * 1000);
+  </script>
+
+  <!-- Only include verify.js since deviceId handling is now inline -->
+  <script src="js/verify.js"></script>
+</body>
+</html>

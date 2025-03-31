@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Device Verification Admin Panel</title>
+    <style>
+        .container { max-width: 800px; margin: 40px auto; padding: 20px; }
+        .verification-form { margin-bottom: 40px; }
+        .device-list { margin-top: 20px; }
+        .device-item { 
+            padding: 10px;
+            border: 1px solid #ddd;
+            margin: 5px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .verified { background-color: #e8f5e9; }
+        .unverified { background-color: #ffebee; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Device Verification Admin Panel</h1>
+        
+        <div class="verification-form">
+            <h2>Verify Device</h2>
+            <input type="text" id="deviceId" placeholder="Enter Device ID">
+            
+            <!-- Add verification options -->
+            <select id="duration">
+                <option value="7">1 Week</option>
+                <option value="14" selected>2 Weeks</option>
+                <option value="custom">Custom</option>
+            </select>
+            
+            <div id="customDuration" style="display:none;">
+                <input type="number" id="customDays" min="1" placeholder="Number of days">
+            </div>
+            
+            <label>
+                <input type="checkbox" id="coursebookAccess"> Allow Coursebook Access
+            </label>
+
+            <label>
+                <input type="checkbox" id="collegeCoursesAccess"> Allow College Courses Access
+            </label>
+            
+            <button onclick="verifyDevice()">Verify Device</button>
+            <p id="status"></p>
+        </div>
+
+        <div class="device-list">
+            <h2>Registered Devices</h2>
+            <div id="devicesList"></div>
+        </div>
+    </div>
+
+    <script>
+        function verifyDevice(id) {
+            const deviceId = id || document.getElementById('deviceId').value;
+            const durationType = document.getElementById('duration').value;
+            const days = durationType === 'custom' ? 
+                        parseInt(document.getElementById('customDays').value) :
+                        parseInt(durationType);
+            const allowCoursebooks = document.getElementById('coursebookAccess').checked;
+            const allowCollegeCourses = document.getElementById('collegeCoursesAccess').checked;
+
+            if (!deviceId) {
+                setStatus('Please enter a device ID');
+                return;
+            }
+
+            fetch('/verify-device', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    deviceId,
+                    days,
+                    allowCoursebooks,
+                    allowCollegeCourses
+                })
+            })
+            .then(response => response.text())
+            .then(data => {
+                setStatus(data);
+                loadDevices(); // Refresh the list
+            })
+            .catch(error => {
+                setStatus('Error: ' + error.message);
+                console.error('Error:', error);
+            });
+        }
+
+        function setStatus(message) {
+            document.getElementById('status').textContent = message;
+        }
+
+        function loadDevices() {
+            fetch('/get-devices')
+                .then(res => {
+                    console.log('Response status:', res.status); // Debug logging
+                    if (!res.ok) {
+                        throw new Error(`Server returned ${res.status}`);
+                    }
+                    return res.json();
+                })
+                .then(devices => {
+                    console.log('Received devices:', devices); // Debug logging
+                    const list = document.getElementById('devicesList');
+                    if (!Array.isArray(devices)) {
+                        throw new Error('Invalid response format');
+                    }
+                    list.innerHTML = devices.map(device => `
+                        <div class="device-item ${device.verified ? 'verified' : 'unverified'}">
+                            <span>${device.deviceId}</span>
+                            <div>
+                                <span>${device.verified ? '✓ Verified' : 'Unverified'}</span>
+                                ${!device.verified ? 
+                                    `<button onclick="verifyDevice('${device.deviceId}')">Verify</button>` : 
+                                    ''}
+                            </div>
+                        </div>
+                    `).join('');
+                })
+                .catch(error => {
+                    console.error('Error details:', error); // Detailed error logging
+                    document.getElementById('devicesList').innerHTML = 
+                        `<p style="color: red;">Error loading devices: ${error.message}</p>`;
+                });
+        }
+
+        // Load devices on page load
+        loadDevices();
+        // Refresh list every 30 seconds
+        setInterval(loadDevices, 30000);
+
+        // Add duration dropdown handler
+        document.getElementById('duration').addEventListener('change', function() {
+            document.getElementById('customDuration').style.display = 
+                this.value === 'custom' ? 'block' : 'none';
+        });
+    </script>
+</body>
+</html>
