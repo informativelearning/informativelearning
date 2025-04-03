@@ -2,144 +2,314 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Device Verification Admin Panel</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Device Verification Admin</title>
     <style>
-        .container { max-width: 800px; margin: 40px auto; padding: 20px; }
-        .verification-form { margin-bottom: 40px; }
-        .device-list { margin-top: 20px; }
-        .device-item { 
-            padding: 10px;
-            border: 1px solid #ddd;
-            margin: 5px 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+        body { font-family: sans-serif; margin: 20px; line-height: 1.6; max-width: 1200px; margin: 0 auto; }
+        table { border-collapse: collapse; width: 100%; margin-top: 20px; font-size: 0.9em; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; vertical-align: top; }
+        th { background-color: #f2f2f2; }
+        button { cursor: pointer; padding: 5px 10px; margin-left: 5px; border: 1px solid #ccc; background-color: #eee; border-radius: 3px;}
+        button:hover { background-color: #ddd; }
+        button.remove-btn { background-color: #fdd; border-color: #fbb;}
+        button.remove-btn:hover { background-color: #fbb;}
+        .form-section { margin-bottom: 20px; padding: 15px; border: 1px solid #ccc; border-radius: 5px; background-color: #f9f9f9; }
+        label { display: inline-block; margin-right: 10px; min-width: 100px;}
+        input[type="text"], input[type="number"], select { padding: 8px; margin-right: 10px; border: 1px solid #ccc; border-radius: 3px; }
+        input[type="checkbox"] { margin-right: 5px; vertical-align: middle;}
+        .permission-label { min-width: auto; margin-right: 15px; }
+        #statusMessage { margin-top: 15px; padding: 10px; border-radius: 3px; display: none; }
+        .status-success { background-color: #dff0d8; border: 1px solid #d6e9c6; color: #3c763d; }
+        .status-error { background-color: #f2dede; border: 1px solid #ebccd1; color: #a94442; }
+        .break-word { word-break: break-all; }
         .verified { background-color: #e8f5e9; }
         .unverified { background-color: #ffebee; }
+        #customDuration { margin-top: 10px; display: none; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Device Verification Admin Panel</h1>
-        
-        <div class="verification-form">
-            <h2>Verify Device</h2>
-            <input type="text" id="deviceId" placeholder="Enter Device ID">
-            
-            <!-- Add verification options -->
-            <select id="duration">
-                <option value="7">1 Week</option>
-                <option value="14" selected>2 Weeks</option>
-                <option value="custom">Custom</option>
-            </select>
-            
-            <div id="customDuration" style="display:none;">
-                <input type="number" id="customDays" min="1" placeholder="Number of days">
+    <h1>Device Verification Admin</h1>
+
+    <div class="form-section">
+        <h2>Add / Update Device Verification</h2>
+        <form id="verifyForm">
+            <div>
+                <label for="deviceId">Device ID:</label>
+                <input type="text" id="deviceId" name="deviceId" required size="50" placeholder="Enter Device ID from user">
             </div>
-            
-            <label>
-                <input type="checkbox" id="coursebookAccess"> Allow Coursebook Access
-            </label>
-
-            <label>
-                <input type="checkbox" id="collegeCoursesAccess"> Allow College Courses Access
-            </label>
-            
-            <button onclick="verifyDevice()">Verify Device</button>
-            <p id="status"></p>
-        </div>
-
-        <div class="device-list">
-            <h2>Registered Devices</h2>
-            <div id="devicesList"></div>
-        </div>
+            <br>
+            <div>
+                <label for="duration">Verification Period:</label>
+                <select id="duration" name="duration">
+                    <option value="7">1 Week</option>
+                    <option value="14" selected>2 Weeks</option>
+                    <option value="30">1 Month</option>
+                    <option value="custom">Custom</option>
+                </select>
+                
+                <div id="customDuration">
+                    <label for="days">Custom Days:</label>
+                    <input type="number" id="days" name="days" value="14" min="1" required style="width: 60px;">
+                </div>
+            </div>
+            <br>
+            <div>
+                <label>Permissions:</label>
+                <input type="checkbox" id="access_proxy" name="access_proxy" value="1"> 
+                <label class="permission-label" for="access_proxy">Proxy Access (/)</label>
+                
+                <input type="checkbox" id="access_games" name="access_games" value="1"> 
+                <label class="permission-label" for="access_games">Games Access</label>
+                
+                <input type="checkbox" id="access_other" name="access_other" value="1"> 
+                <label class="permission-label" for="access_other">Other Access</label>
+            </div>
+            <br>
+            <button type="submit">Verify / Update Device</button>
+        </form>
     </div>
 
+    <h2>Verified Devices</h2>
+    <table id="devicesTable">
+        <thead>
+            <tr>
+                <th>Device ID</th>
+                <th>Status</th>
+                <th>Verified At</th>
+                <th>Expires At</th>
+                <th>Proxy</th>
+                <th>Games</th>
+                <th>Other</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="devicesTableBody">
+            <tr><td colspan="8">Loading devices...</td></tr>
+        </tbody>
+    </table>
+
+    <p id="statusMessage"></p>
+
     <script>
-        function verifyDevice(id) {
-            const deviceId = id || document.getElementById('deviceId').value;
-            const durationType = document.getElementById('duration').value;
-            const days = durationType === 'custom' ? 
-                        parseInt(document.getElementById('customDays').value) :
-                        parseInt(durationType);
-            const allowCoursebooks = document.getElementById('coursebookAccess').checked;
-            const allowCollegeCourses = document.getElementById('collegeCoursesAccess').checked;
+        const verifyForm = document.getElementById('verifyForm');
+        const devicesTableBody = document.getElementById('devicesTableBody');
+        const statusMessageEl = document.getElementById('statusMessage');
+        const durationSelect = document.getElementById('duration');
+        const customDurationDiv = document.getElementById('customDuration');
+        const daysInput = document.getElementById('days');
+        
+        // Handle custom duration visibility
+        durationSelect.addEventListener('change', function() {
+            if (this.value === 'custom') {
+                customDurationDiv.style.display = 'block';
+            } else {
+                customDurationDiv.style.display = 'none';
+                daysInput.value = this.value; // Set days to match selected duration
+            }
+        });
+
+        // --- Helper Functions ---
+        function showStatus(message, isError = false) {
+            statusMessageEl.textContent = message;
+            statusMessageEl.className = isError ? 'status-error' : 'status-success';
+            statusMessageEl.style.display = 'block';
+            // Automatically hide after a few seconds
+            setTimeout(() => {
+                 statusMessageEl.style.display = 'none';
+            }, 5000);
+        }
+
+        function formatTimestamp(timestamp) {
+            if (!timestamp) return 'N/A';
+            try {
+                // Assuming timestamp is Unix epoch milliseconds
+                return new Date(Number(timestamp)).toLocaleString();
+            } catch (e) {
+                return 'Invalid Date';
+            }
+        }
+
+        function formatBoolean(value) {
+            return value === 1 ? 'Yes' : 'No';
+        }
+
+        // Debounce function to prevent multiple rapid submissions
+        function debounce(func, wait) {
+            let timeout;
+            return function(...args) {
+                const context = this;
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(context, args), wait);
+            };
+        }
+
+        // --- API Calls ---
+        async function fetchDevices() {
+            console.log("Fetching device list...");
+            devicesTableBody.innerHTML = '<tr><td colspan="8">Loading devices...</td></tr>';
+            try {
+                const response = await fetch('/admin/api/list-devices');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const devices = await response.json();
+                console.log("Devices received:", devices);
+                renderDevices(devices);
+            } catch (error) {
+                console.error('Error fetching devices:', error);
+                devicesTableBody.innerHTML = '<tr><td colspan="8" style="color: red;">Error loading devices. Check console.</td></tr>';
+                showStatus(`Error loading devices: ${error.message}`, true);
+            }
+        }
+
+        const verifyDeviceDebounced = debounce(async function(event) {
+            event.preventDefault(); // Stop default form submission
+            
+            const deviceId = document.getElementById('deviceId').value.trim();
+            const durationType = durationSelect.value;
+            let days;
+            
+            if (durationType === 'custom') {
+                days = parseInt(daysInput.value, 10);
+            } else {
+                days = parseInt(durationType, 10);
+            }
+            
+            // Get checkbox values (checked = 1, unchecked = 0)
+            const access_proxy = document.getElementById('access_proxy').checked ? 1 : 0;
+            const access_games = document.getElementById('access_games').checked ? 1 : 0;
+            const access_other = document.getElementById('access_other').checked ? 1 : 0;
 
             if (!deviceId) {
-                setStatus('Please enter a device ID');
+                showStatus('Device ID cannot be empty.', true);
+                return;
+            }
+            
+            if (isNaN(days) || days < 1) {
+                showStatus('Invalid number of days.', true);
                 return;
             }
 
-            fetch('/verify-device', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    deviceId,
-                    days,
-                    allowCoursebooks,
-                    allowCollegeCourses
-                })
-            })
-            .then(response => response.text())
-            .then(data => {
-                setStatus(data);
-                loadDevices(); // Refresh the list
-            })
-            .catch(error => {
-                setStatus('Error: ' + error.message);
-                console.error('Error:', error);
+            const body = {
+                deviceId,
+                days,
+                access_proxy,
+                access_games,
+                access_other
+            };
+            console.log("Verifying device with body:", body);
+
+            try {
+                const response = await fetch('/admin/api/verify-device', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.error || `HTTP error! status: ${response.status}`);
+                }
+
+                console.log("Verify response:", result);
+                showStatus(`Device ${deviceId} verified/updated successfully.`);
+                verifyForm.reset(); // Clear the form
+                customDurationDiv.style.display = 'none'; // Reset custom duration visibility
+                fetchDevices(); // Refresh the list
+            } catch (error) {
+                console.error('Error verifying device:', error);
+                showStatus(`Error verifying device: ${error.message}`, true);
+            }
+        }, 300); // 300ms debounce
+
+        async function removeDevice(deviceId) {
+            if (!deviceId) return;
+            if (!confirm(`Are you sure you want to remove device ID: ${deviceId}?`)) {
+                return; // User cancelled
+            }
+            console.log(`Removing device: ${deviceId}`);
+            try {
+                const response = await fetch('/admin/api/remove-device', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ deviceId })
+                });
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.error || `HTTP error! status: ${response.status}`);
+                }
+
+                console.log("Remove response:", result);
+                showStatus(`Device ${deviceId} removed successfully.`);
+                fetchDevices(); // Refresh the list
+            } catch (error) {
+                console.error('Error removing device:', error);
+                showStatus(`Error removing device: ${error.message}`, true);
+            }
+        }
+
+        // --- Rendering ---
+        function renderDevices(devices) {
+            devicesTableBody.innerHTML = ''; // Clear previous content
+            if (!devices || devices.length === 0) {
+                devicesTableBody.innerHTML = '<tr><td colspan="8">No devices found.</td></tr>';
+                return;
+            }
+
+            devices.forEach(device => {
+                const row = devicesTableBody.insertRow();
+                const isVerified = device.verified === 1;
+                
+                // Apply row class based on verification status
+                if (isVerified) {
+                    row.className = 'verified';
+                } else {
+                    row.className = 'unverified';
+                }
+                
+                // Add device ID with word break
+                const deviceIdCell = row.insertCell();
+                deviceIdCell.className = 'break-word';
+                deviceIdCell.textContent = device.deviceId;
+                
+                // Status with visual indicator
+                const statusCell = row.insertCell();
+                statusCell.textContent = isVerified ? '✓ Verified' : 'Unverified';
+                
+                row.insertCell().textContent = formatTimestamp(device.verifiedAt);
+                row.insertCell().textContent = formatTimestamp(device.verification_expires_at);
+                row.insertCell().textContent = formatBoolean(device.access_proxy);
+                row.insertCell().textContent = formatBoolean(device.access_games);
+                row.insertCell().textContent = formatBoolean(device.access_other);
+
+                // Actions cell
+                const actionsCell = row.insertCell();
+                const removeButton = document.createElement('button');
+                removeButton.textContent = 'Remove';
+                removeButton.className = 'remove-btn';
+                removeButton.onclick = () => removeDevice(device.deviceId);
+                actionsCell.appendChild(removeButton);
+                
+                // Add verify button for unverified devices
+                if (!isVerified) {
+                    const verifyButton = document.createElement('button');
+                    verifyButton.textContent = 'Verify';
+                    verifyButton.onclick = () => {
+                        document.getElementById('deviceId').value = device.deviceId;
+                        document.getElementById('deviceId').focus();
+                    };
+                    actionsCell.appendChild(verifyButton);
+                }
             });
         }
 
-        function setStatus(message) {
-            document.getElementById('status').textContent = message;
-        }
-
-        function loadDevices() {
-            fetch('/get-devices')
-                .then(res => {
-                    console.log('Response status:', res.status); // Debug logging
-                    if (!res.ok) {
-                        throw new Error(`Server returned ${res.status}`);
-                    }
-                    return res.json();
-                })
-                .then(devices => {
-                    console.log('Received devices:', devices); // Debug logging
-                    const list = document.getElementById('devicesList');
-                    if (!Array.isArray(devices)) {
-                        throw new Error('Invalid response format');
-                    }
-                    list.innerHTML = devices.map(device => `
-                        <div class="device-item ${device.verified ? 'verified' : 'unverified'}">
-                            <span>${device.deviceId}</span>
-                            <div>
-                                <span>${device.verified ? '✓ Verified' : 'Unverified'}</span>
-                                ${!device.verified ? 
-                                    `<button onclick="verifyDevice('${device.deviceId}')">Verify</button>` : 
-                                    ''}
-                            </div>
-                        </div>
-                    `).join('');
-                })
-                .catch(error => {
-                    console.error('Error details:', error); // Detailed error logging
-                    document.getElementById('devicesList').innerHTML = 
-                        `<p style="color: red;">Error loading devices: ${error.message}</p>`;
-                });
-        }
-
-        // Load devices on page load
-        loadDevices();
-        // Refresh list every 30 seconds
-        setInterval(loadDevices, 30000);
-
-        // Add duration dropdown handler
-        document.getElementById('duration').addEventListener('change', function() {
-            document.getElementById('customDuration').style.display = 
-                this.value === 'custom' ? 'block' : 'none';
-        });
+        // --- Initialization ---
+        verifyForm.addEventListener('submit', verifyDeviceDebounced);
+        fetchDevices(); // Load initial device list when page loads
+        
+        // Auto-refresh the device list every 60 seconds
+        setInterval(fetchDevices, 60000);
     </script>
 </body>
 </html>
