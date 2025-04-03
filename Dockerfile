@@ -24,14 +24,10 @@ RUN npm install -g pnpm
 # Use pnpm's lock file
 COPY ["package.json", "pnpm-lock.yaml*", "./"]
 
-# Install OS build tools needed for native addons (like sqlite3)
-RUN apk add --no-cache python3 make g++
-
 # Install dependencies using pnpm
 # --frozen-lockfile: Ensures exact versions from lockfile are used
 # --prod: Skips devDependencies
-# --unsafe-perm=true: Allows build scripts (like sqlite3's) to run inside Docker. CRITICAL for sqlite3.
-RUN pnpm install --frozen-lockfile --prod --unsafe-perm=true
+RUN pnpm install --frozen-lockfile --prod
 
 # --- Application Code ---
 # Copy the rest of your application code (src, static, etc.)
