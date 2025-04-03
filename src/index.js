@@ -110,7 +110,7 @@ function checkAdminAuth(request, reply, done) {
 }
 
 // --- Fastify Setup ---
-console.log('[INIT - Admin Backend] Creating Fastify instance...');
+console.log('[INIT - Server] Creating Fastify instance...');
 const fastify = Fastify({
     logger: true,
     serverFactory: (handler) => {
@@ -129,41 +129,44 @@ const fastify = Fastify({
 
 // Enable parsing of form data and JSON bodies
 fastify.register(fastifyFormbody);
-console.log('[INIT - Admin Backend] Fastify instance created.');
+console.log('[INIT - Server] Fastify instance created.');
 
 // --- Route Definitions ---
 
 // Serves UV assets from root
-console.log('[INIT - Admin Backend] Registering / (UV Frontend) static handler...');
+console.log('[INIT - Server] Registering / (UV Frontend) static handler...');
 fastify.register(fastifyStatic, {
     root: publicPath,
     decorateReply: true,
     prefix: '/',
     index: "index.html",
 });
-console.log('[INIT - Admin Backend] Registered / (UV Frontend) static handler OK.');
+console.log('[INIT - Server] Registered / (UV Frontend) static handler OK.');
 
 // Serves specific UV config
-console.log('[INIT - Admin Backend] Registering specific /uv/uv.config.js route...');
+console.log('[INIT - Server] Registering specific /uv/uv.config.js route...');
 fastify.get("/uv/uv.config.js", (req, res) => {
     return res.sendFile("uv/uv.config.js", publicPath);
 });
-console.log('[INIT - Admin Backend] Registered specific /uv/uv.config.js route OK.');
+console.log('[INIT - Server] Registered specific /uv/uv.config.js route OK.');
 
 // Serves core UV scripts
-console.log('[INIT - Admin Backend] Registering core script handlers...');
+console.log('[INIT - Server] Registering core script handlers...');
 fastify.register(fastifyStatic, { root: uvPath, prefix: "/uv/", decorateReply: false });
 fastify.register(fastifyStatic, { root: epoxyPath, prefix: "/epoxy/", decorateReply: false });
 fastify.register(fastifyStatic, { root: baremuxPath, prefix: "/baremux/", decorateReply: false });
-console.log('[INIT - Admin Backend] Registered core script handlers OK.');
+console.log('[INIT - Server] Registered core script handlers OK.');
 
-// Handler for your static files (homepage.html, assets)
-console.log('[INIT - Admin Backend] Registering /static/ handler...');
-fastify.register(fastifyStatic, { root: localStaticPath, prefix: '/static/', decorateReply: false });
-console.log('[INIT - Admin Backend] Registered /static/ handler OK.');
+// Serves static files - combining both paths
+fastify.register(fastifyStatic, {
+    root: localStaticPath,
+    prefix: "/welcome/",
+    decorateReply: false,
+});
+console.log('[INIT - Server] Registered static file handlers OK.');
 
 // --- Admin Page & API Routes ---
-console.log('[INIT - Admin Backend] Registering Admin routes...');
+console.log('[INIT - Server] Registering Admin routes...');
 fastify.register(async function adminApiRoutes(fastify, options) {
     // Serve admin.html (Apply auth check before handler)
     fastify.get('/admin.html', { preHandler: checkAdminAuth }, (request, reply) => {
@@ -244,7 +247,7 @@ fastify.register(async function adminApiRoutes(fastify, options) {
     });
     
 }, { prefix: '/admin' });
-console.log('[INIT - Admin Backend] Registered Admin routes OK.');
+console.log('[INIT - Server] Registered Admin routes OK.');
 
 // --- Server Start & Shutdown Logic ---
 fastify.server.on("listening", () => {
@@ -290,4 +293,5 @@ fastify.listen({ port: port, host: "0.0.0.0" }, (err, address) => {
 
 process.on('unhandledRejection', (reason, promise) => {
     console.error('[FATAL] Unhandled Rejection at:', promise, 'reason:', reason);
+    // Log but don't exit - this is better for handling errors
 });
