@@ -8,6 +8,8 @@ import Fastify from "fastify";
 import fastifyStatic from "@fastify/static";
 import wisp from "wisp-server-node";
 import pg from "pg";
+import auth from 'basic-auth';
+import fastifyFormbody from '@fastify/formbody';
 
 // UV Core Imports
 import { publicPath } from "ultraviolet-static";
@@ -20,6 +22,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const localStaticPath = join(__dirname, "..", "static");
 const DATABASE_URL = process.env.DATABASE_URL;
+const ADMIN_USER = process.env.ADMIN_USERNAME || 'admin';
+const ADMIN_PASS = process.env.ADMIN_PASSWORD || 'password';
+console.log(`[DEBUG] Admin User: ${ADMIN_USER}`);
 
 // --- PostgreSQL Connection Setup ---
 console.log('[INIT - Postgres Connect v2] Setting up PostgreSQL connection pool...');
@@ -75,7 +80,6 @@ async function initializeDatabase() {
         console.log('[INIT - Postgres Connect v2] Table "verified_devices" is ready.');
     } catch (err) {
         console.error('[ERROR] Failed to create or check "verified_devices" table:', err);
-        // Don't throw the error further
     } finally {
         if (client) {
             client.release();
@@ -84,7 +88,29 @@ async function initializeDatabase() {
     }
 }
 
+// --- Authentication Middleware ---
+function checkAdminAuth(request, reply, done) {
+    console.log('[AUTH] Checking admin auth...');
+    const credentials = auth(request);
+    let denied = true; // Assume denied initially
+    
+    if (credentials && credentials.name === ADMIN_USER && credentials.pass === ADMIN_PASS) {
+        denied = false; // Grant access if credentials match
+        console.log('[AUTH] Admin auth successful.');
+        done(); // Proceed to the route handler
+        return;
+    }
+
+    if (denied) {
+        console.warn('[AUTH] Admin auth failed.');
+        // If check failed, send 401 Unauthorized
+        reply.code(401).header('WWW-Authenticate', 'Basic realm="Admin Area"').send({ error: 'Unauthorized' });
+        // 'done()' is NOT called, preventing access to the route
+    }
+}
+
 // --- Fastify Setup ---
+console.log('[INIT - Admin Backend] Creating Fastify instance...');
 const fastify = Fastify({
     logger: true,
     serverFactory: (handler) => {
@@ -101,31 +127,124 @@ const fastify = Fastify({
     },
 });
 
+// Enable parsing of form data and JSON bodies
+fastify.register(fastifyFormbody);
+console.log('[INIT - Admin Backend] Fastify instance created.');
+
 // --- Route Definitions ---
+
 // Serves UV assets from root
+console.log('[INIT - Admin Backend] Registering / (UV Frontend) static handler...');
 fastify.register(fastifyStatic, {
     root: publicPath,
     decorateReply: true,
     prefix: '/',
     index: "index.html",
 });
+console.log('[INIT - Admin Backend] Registered / (UV Frontend) static handler OK.');
 
 // Serves specific UV config
+console.log('[INIT - Admin Backend] Registering specific /uv/uv.config.js route...');
 fastify.get("/uv/uv.config.js", (req, res) => {
     return res.sendFile("uv/uv.config.js", publicPath);
 });
+console.log('[INIT - Admin Backend] Registered specific /uv/uv.config.js route OK.');
 
 // Serves core UV scripts
+console.log('[INIT - Admin Backend] Registering core script handlers...');
 fastify.register(fastifyStatic, { root: uvPath, prefix: "/uv/", decorateReply: false });
 fastify.register(fastifyStatic, { root: epoxyPath, prefix: "/epoxy/", decorateReply: false });
 fastify.register(fastifyStatic, { root: baremuxPath, prefix: "/baremux/", decorateReply: false });
+console.log('[INIT - Admin Backend] Registered core script handlers OK.');
 
-// Serves your static files
-fastify.register(fastifyStatic, {
-    root: localStaticPath,
-    prefix: "/welcome/",
-    decorateReply: false,
-});
+// Handler for your static files (homepage.html, assets)
+console.log('[INIT - Admin Backend] Registering /static/ handler...');
+fastify.register(fastifyStatic, { root: localStaticPath, prefix: '/static/', decorateReply: false });
+console.log('[INIT - Admin Backend] Registered /static/ handler OK.');
+
+// --- Admin Page & API Routes ---
+console.log('[INIT - Admin Backend] Registering Admin routes...');
+fastify.register(async function adminApiRoutes(fastify, options) {
+    // Serve admin.html (Apply auth check before handler)
+    fastify.get('/admin.html', { preHandler: checkAdminAuth }, (request, reply) => {
+        console.log('[ROUTE] Serving static/admin.html');
+        const pagePath = join(localStaticPath, 'admin.html');
+        if (fs.existsSync(pagePath)) {
+            return reply.sendFile('admin.html', localStaticPath);
+        } else {
+            console.error(`[ERROR] Cannot find admin.html at ${pagePath}`);
+            reply.code(404).send('Admin page not found.');
+        }
+    });
+
+    // API: List Devices (Apply auth check before handler)
+    fastify.get('/api/list-devices', { preHandler: checkAdminAuth }, async (request, reply) => {
+        console.log('[API] GET /api/list-devices');
+        if (!pool) return reply.code(503).send({ error: 'Database not connected' });
+        try {
+            const result = await pool.query('SELECT "deviceId", "verified", "verifiedAt", "verification_expires_at", "access_proxy", "access_games", "access_other" FROM verified_devices ORDER BY "verifiedAt" DESC');
+            reply.send(result.rows || []);
+        } catch (err) {
+            console.error('[API Error] /api/list-devices:', err);
+            reply.code(500).send({ error: 'Database query failed' });
+        }
+    });
+
+    // API: Verify/Update Device (Apply auth check before handler)
+    fastify.post('/api/verify-device', { preHandler: checkAdminAuth }, async (request, reply) => {
+        // Default values if not provided in request
+        const { deviceId, days = 14, access_proxy = 0, access_games = 0, access_other = null } = request.body || {};
+        console.log(`[API] POST /api/verify-device for ID: ${deviceId}`);
+        if (!deviceId) return reply.code(400).send({ error: 'Device ID required' });
+        if (!pool) return reply.code(503).send({ error: 'Database not connected' });
+
+        // Use BIGINT for timestamp (milliseconds since epoch)
+        const expiresAt = Date.now() + Number(days) * 24 * 60 * 60 * 1000;
+        // Ensure boolean flags are integers 0 or 1
+        const proxyAccess = access_proxy ? 1 : 0;
+        const gamesAccess = access_games ? 1 : 0;
+
+        const sql = `
+            INSERT INTO verified_devices ("deviceId", verified, "verification_expires_at", access_proxy, access_games, access_other, "verifiedAt")
+            VALUES ($1, 1, $2, $3, $4, $5, NOW())
+            ON CONFLICT("deviceId") DO UPDATE SET
+                verified=1,
+                "verification_expires_at" = excluded."verification_expires_at",
+                access_proxy = excluded.access_proxy,
+                access_games = excluded.access_games,
+                access_other = excluded.access_other,
+                "verifiedAt" = NOW();
+        `;
+        try {
+            const result = await pool.query(sql, [deviceId, expiresAt, proxyAccess, gamesAccess, access_other]);
+            reply.send({ success: true, rowCount: result.rowCount });
+        } catch (err) {
+            console.error('[API Error] /api/verify-device:', err);
+            reply.code(500).send({ error: 'Database query failed' });
+        }
+    });
+
+    // API: Remove Device (Apply auth check before handler)
+    fastify.post('/api/remove-device', { preHandler: checkAdminAuth }, async (request, reply) => {
+        const { deviceId } = request.body || {};
+        console.log(`[API] POST /api/remove-device for ID: ${deviceId}`);
+        if (!deviceId) return reply.code(400).send({ error: 'Device ID required' });
+        if (!pool) return reply.code(503).send({ error: 'Database not connected' });
+        try {
+            const result = await pool.query('DELETE FROM verified_devices WHERE "deviceId" = $1', [deviceId]);
+            if (result.rowCount > 0) {
+                reply.send({ success: true, message: 'Device removed.' });
+            } else {
+                reply.code(404).send({ error: 'Device not found.' });
+            }
+        } catch (err) {
+            console.error('[API Error] /api/remove-device:', err);
+            reply.code(500).send({ error: 'Database query failed' });
+        }
+    });
+    
+}, { prefix: '/admin' });
+console.log('[INIT - Admin Backend] Registered Admin routes OK.');
 
 // --- Server Start & Shutdown Logic ---
 fastify.server.on("listening", () => {
@@ -171,5 +290,4 @@ fastify.listen({ port: port, host: "0.0.0.0" }, (err, address) => {
 
 process.on('unhandledRejection', (reason, promise) => {
     console.error('[FATAL] Unhandled Rejection at:', promise, 'reason:', reason);
-    // Log but don't exit - this is better for handling errors
 });
