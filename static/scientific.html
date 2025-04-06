@@ -53,11 +53,38 @@
             display: inline-block;
             border-radius: 10px;
         }
-        /* Optional styling for the device ID display */
+        /* Device info section styling */
+        .device-info {
+            margin-top: 40px;
+            padding: 20px;
+            background: rgba(0,0,0,0.7);
+            border-radius: 10px;
+            display: inline-block;
+            min-width: 300px;
+        }
         .device-id-display {
-            font-size: 1rem;
-            margin-top: 20px;
+            font-size: 1.2rem;
+            margin: 10px 0;
             color: #f0f0f0;
+            word-break: break-all;
+        }
+        #device-id {
+            font-weight: bold;
+            color: #4ee44e;
+        }
+        .verification-status {
+            padding: 5px 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            display: inline-block;
+        }
+        .status-verified {
+            background-color: rgba(0, 128, 0, 0.3);
+            border: 1px solid #4ee44e;
+        }
+        .status-unverified {
+            background-color: rgba(255, 0, 0, 0.3);
+            border: 1px solid #ff6b6b;
         }
     </style>
 </head>
@@ -73,15 +100,17 @@
             </div>
             <p>You've discovered our hidden sanctuary of advanced scientific concepts.</p>
             <p>This secret page is dedicated to those who seek deeper understanding.</p>
-            <!-- Added element to display the device ID -->
+            
+            <!-- Device Information Display Section -->
             <div class="device-info">
+                <h3>Device Authentication</h3>
                 <p class="device-id-display">
                     Device ID: <span id="device-id">Initializing...</span>
-                    <small class="text-muted registration-status"></small>
                 </p>
-                <p>Status: <span id="verification-status">Checking...</span></p>
+                <p>Status: <span id="verification-status" class="verification-status">Checking...</span></p>
                 <p class="access-info">Last Access: <span id="access-time">Loading...</span></p>
             </div>
+            
             <div class="mt-5">
                 <h3 class="text-white mb-4">Advanced Topics</h3>
                 <p>Quantum Mechanics • String Theory • Relativity • Advanced Calculus</p>
@@ -105,7 +134,45 @@
     <!-- JavaScript Libraries -->
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
-    <!-- Include the device ID script -->
+    
+    <!-- Device ID script -->
     <script src="js/deviceId.js"></script>
+    
+    <!-- Script to update the device ID display -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log("Scientific page loaded, updating device ID display...");
+        
+        // Function to update the device ID display
+        function updateDeviceDisplay() {
+            const deviceIdElement = document.getElementById('device-id');
+            const verificationStatus = document.getElementById('verification-status');
+            const accessTimeElement = document.getElementById('access-time');
+            
+            // Get the device ID from the global variable set by deviceId.js
+            if (window.deviceId) {
+                deviceIdElement.textContent = window.deviceId;
+                
+                // Set a mock verification status for demonstration
+                verificationStatus.textContent = "Verified";
+                verificationStatus.className = "verification-status status-verified";
+                
+                // Set current access time
+                const now = new Date();
+                accessTimeElement.textContent = now.toLocaleString();
+                
+                console.log("Device ID display updated successfully");
+            } else {
+                console.error("Device ID not found in window object");
+                deviceIdElement.textContent = "Error: Device ID not found";
+                verificationStatus.textContent = "Unverified";
+                verificationStatus.className = "verification-status status-unverified";
+            }
+        }
+        
+        // Wait a short time to ensure deviceId.js has executed
+        setTimeout(updateDeviceDisplay, 500);
+    });
+    </script>
 </body>
 </html>
