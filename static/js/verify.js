@@ -1,128 +1,154 @@
-(function() {
-  // Skip verification logic if the page is loaded inside an iframe
+// static/js/verify.js (Corrected for actual page roles and permissions)
+
+(async function() {
+  console.log("verify.js (Corrected v3) executing...");
+
   if (window.self !== window.top) {
-    return;
+      console.log("verify.js: Skipping, running in iframe.");
+      return;
   }
 
-  // Get the device ID from localStorage
-  const deviceId = localStorage.getItem('deviceId');
-  
-  // Define all public pages that don't require verification
-  const publicPages = [
-    'about.html', 
-    'contact.html',
-    'homepage.html', 
-    'course.html', 
-    'detail.html', 
-    'feature.html', 
-    'team.html', 
-    'testimonial.html'
+  // --- Configuration ---
+  const publicLandingPage = '/welcome/homepage.html';   // Public landing page path
+  const verifiedLandingPage = '/welcome/truemath.html'; // Verified landing page / popup target path
+  const proxyPath = '/';                               // Path for the main proxy UI
+  const faviconPath = '/welcome/favicon.ico';           // Path to the favicon for the popup
+
+  // --- Get Device ID (from deviceId.js) ---
+  await new Promise(resolve => setTimeout(resolve, 20)); // Give deviceId.js a moment
+  const deviceId = window.deviceId || localStorage.getItem('deviceId');
+  console.log(`verify.js: Using deviceId: ${deviceId}`);
+
+  // --- Page Definitions based on Pathname ---
+  const currentPath = window.location.pathname;
+
+  // Publicly accessible pages (full paths) - Anyone can see these
+  const publicPaths = [
+      '/welcome/homepage.html',
+      '/welcome/about.html',
+      '/welcome/contact.html',
+      '/welcome/course.html',
+      '/welcome/detail.html',
+      '/welcome/feature.html',
+      '/welcome/team.html',
+      '/welcome/testimonial.html',
+      '/welcome/scientific.html' // Still public based on previous info
+      // Add any other truly public page paths here
   ];
-  
-  // Define hidden pages that don't trigger dashboard/redirect
-  const hiddenPages = ['truemath.html', 'coursebooks.html', 'funinlearning.html'];
-  
-  // Define protected pages requiring deviceId in the URL for server validation
-  const protectedPages = ['truemath.html', 'funinlearning.html', 'coursebooks.html', 'collegecourses.html'];
 
-  // Determine if we're on the homepage/index
-  function isHomePage() {
-    const path = window.location.pathname;
-    const hostname = window.location.hostname;
-    const fullUrl = window.location.href;
-    return path === '/' || 
-           path === '' || 
-           path === '/index.html' ||
-           fullUrl === `http://${hostname}` ||
-           fullUrl === `https://${hostname}` ||
-           fullUrl === `http://${hostname}/` ||
-           fullUrl === `https://${hostname}/`;
+  // All paths that require *at least* general verification (verified=1 and not expired)
+  // Specific permissions are checked later if applicable.
+  const protectedPaths = [
+      proxyPath, // Proxy UI root
+      '/welcome/truemath.html',
+      '/welcome/coursebooks.html',
+      '/welcome/funinlearning.html', // Games page
+      '/welcome/collegecourses.html'
+      // Add any other paths that require login/verification
+  ];
+
+  console.log(`verify.js: Current Path: ${currentPath}`);
+
+
+  // --- Function to open the verified area popup & redirect original tab ---
+  function openDashboardAndRedirect(currentDeviceId) {
+      console.log("verify.js: User verified, attempting to open dashboard popup...");
+      const win = window.open('', '_blank'); // Open blank target first
+
+      if (!win || win.closed || typeof win.closed == 'undefined') {
+          console.warn("verify.js: Popup blocked or failed to open.");
+          alert('Popup blocked! Please allow popups for this site and reload to access verified content.');
+          return false; // Indicate failure
+      }
+      try {
+          win.document.title = 'Dashboard'; // Set title early
+          setTimeout(() => { /* ... rest of popup generation logic ... */ }, 50);
+          return true; // Popup initially opened successfully
+      } catch (error) { /* ... error handling ... */ return false; }
   }
 
-  // Get the current page
-  let currentPage = isHomePage() ? 'index.html' : window.location.pathname.split('/').pop() || 'index.html';
 
-  // **New Logic**: Check if on a protected page without deviceId in URL
-  if (protectedPages.includes(currentPage) && !window.location.search.includes('deviceId') && deviceId) {
-    window.location.href = `${currentPage}?deviceId=${encodeURIComponent(deviceId)}`;
-    return;
-  }
-
-  // If no deviceId but on a public page, allow access
-  if (!deviceId && publicPages.includes(currentPage)) {
-    return;
-  }
-  
-  // If no deviceId and not on a public page, redirect to index
+  // --- No Device ID Handling ---
   if (!deviceId) {
-    window.location.href = 'index.html';
-    return;
+      console.log("verify.js: No deviceId found.");
+      // If on a protected path -> Redirect
+      if (protectedPaths.includes(currentPath)) {
+           console.log(`verify.js: No deviceId, redirecting from protected path ${currentPath} to ${publicLandingPage}`);
+           window.location.replace(publicLandingPage);
+      } else { console.log(`verify.js: No deviceId, and on a public path (${currentPath}), staying.`); }
+      return; // Stop execution
   }
 
-  function openDashboard(deviceId) {
-    const win = window.open('');
-    if (!win) {
-      alert('Please allow popups for this site to access the content.');
-      return false;
-    }
-    try {
-      win.document.body.style.margin = '0';
-      win.document.body.style.height = '100vh';
-      win.document.body.style.padding = '0';
-      win.document.body.style.overflow = 'hidden';
-      win.document.title = 'Dashboard';
-      const favicon = win.document.createElement('link');
-      favicon.rel = 'icon';
-      favicon.type = 'image/x-icon';
-      favicon.href = window.location.origin + '/Dashboard-favicon.ico';
-      win.document.head.appendChild(favicon);
-      const iframe = win.document.createElement('iframe');
-      iframe.style.border = 'none';
-      iframe.style.width = '100%';
-      iframe.style.height = '100%';
-      iframe.style.margin = '0';
-      iframe.src = `truemath.html?deviceId=${encodeURIComponent(deviceId)}`;
-      win.document.body.appendChild(iframe);
-      return true;
-    } catch (error) {
-      console.error('Error creating window:', error);
-      win.close();
-      alert('Error loading content. Please try again.');
-      return false;
-    }
+  // --- Fetch Verification Status ---
+  let verificationStatus = null;
+  let apiError = false;
+  try {
+      console.log(`verify.js: Checking verification status for ${deviceId}...`);
+      const response = await fetch(`/api/check-verification?deviceId=${encodeURIComponent(deviceId)}`);
+      if (!response.ok) { throw new Error(`API check HTTP status ${response.status}`); }
+      verificationStatus = await response.json();
+      // Use the actual structure returned by your API check
+      if (!verificationStatus || typeof verificationStatus.verified === 'undefined' || typeof verificationStatus.access === 'undefined') {
+          throw new Error('Invalid API response format');
+      }
+      console.log("verify.js: Verification status received:", verificationStatus);
+  } catch (error) {
+      console.error("verify.js: Verification check failed:", error);
+      apiError = true;
   }
 
-  // Fetch verification status
-  fetch(`/check-verification?deviceId=${deviceId}`)
-    .then(response => response.json())
-    .then(data => {
-      if (data.verified) {
-        if (hiddenPages.includes(currentPage)) {
-          return;
-        }
-        if (!hiddenPages.includes(currentPage)) {
-          const opened = openDashboard(deviceId);
-          if (opened) {
-            const educationalSites = [
-              'https://wascouhsd.instructure.com',
-              'https://clever.com',
-              'https://docs.google.com'
-            ];
-            const randomSite = educationalSites[Math.floor(Math.random() * educationalSites.length)];
-            window.location.href = randomSite;
-          }
-        }
+  // Determine verification state, considering API errors
+  const isVerified = verificationStatus?.verified && !apiError; // Check the verified flag from API
+  const permissions = verificationStatus?.access || {}; // Use the 'access' object from API response
+
+  console.log(`verify.js: Final Check - isVerified: ${isVerified}, Current Path: ${currentPath}, Permissions:`, permissions);
+
+  // --- Apply Logic based on Status ---
+  if (isVerified) {
+      // --- Verified User ---
+      console.log("verify.js: User is VERIFIED.");
+
+      // Trigger popup/decoy IF user lands on a public page
+      if (publicPaths.includes(currentPath)) {
+          console.log(`verify.js: Verified user on public page (${currentPath}). Triggering popup/redirect.`);
+          openDashboardAndRedirect(deviceId); // Redirect handled inside
+          return; // Stop script execution after triggering
+      }
+
+      // Now check permissions for protected paths they might be on
+      if (currentPath === proxyPath) { // Checking Proxy Root
+          if (!permissions.proxy) {
+               console.log(`verify.js: Verified user lacks proxy permission at ${proxyPath}, redirecting to ${verifiedLandingPage}`);
+               window.location.replace(verifiedLandingPage);
+               return;
+          } else { console.log(`verify.js: Verified user WITH proxy permission allowed at ${proxyPath}.`); }
+      }
+      else if (currentPath === '/welcome/funinlearning.html') { // Checking Games Page
+          if (!permissions.games) {
+              console.log(`verify.js: Verified user lacks games permission, redirecting...`);
+              window.location.replace(verifiedLandingPage); // Redirect to verified home
+              return;
+          } else { console.log(`verify.js: Verified user WITH games permission allowed.`); }
+      }
+      // Add checks for coursebooks, collegecourses using permissions.coursebooks, permissions.collegecourses if those exist
+      // else if (currentPath === '/welcome/coursebooks.html' && !permissions.coursebooks) { ... redirect ... }
+      // else if (currentPath === '/welcome/collegecourses.html' && !permissions.collegecourses) { ... redirect ... }
+
+
+      // If verified and on an allowed page (like truemath.html or proxy with permission), just stay.
+      console.log(`verify.js: Verified user allowed on current verified page: ${currentPath}`);
+
+  } else {
+      // --- Unverified User (or API Error or Expired) ---
+      console.log("verify.js: User is NOT verified (or API error/expired).");
+      // If user tries to access a protected path -> Redirect to public landing
+      if (protectedPaths.includes(currentPath)) {
+          console.log(`verify.js: Unverified user trying to access protected path ${currentPath}, redirecting to ${publicLandingPage}`);
+          window.location.replace(publicLandingPage);
       } else {
-        if (publicPages.includes(currentPage)) {
-          return;
-        }
-        window.location.href = 'index.html';
+           // Unverified user is on a public page, allow access.
+           console.log(`verify.js: Unverified user on public path ${currentPath}, allowing access.`);
       }
-    })
-    .catch(error => {
-      console.error('Verification check failed:', error);
-      if (!publicPages.includes(currentPage)) {
-        window.location.href = 'homepage.html';
-      }
-    });
+  }
+
 })();
