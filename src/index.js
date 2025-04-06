@@ -133,13 +133,18 @@ console.log('[INIT - Server] Fastify instance created.');
 
 // --- Route Definitions ---
 
-// Serves UV assets from root
+// Serves custom index.html at root
+fastify.get('/', (request, reply) => {
+    reply.sendFile('violet-index.html', localStaticPath); // Use your custom file name
+});
+
+// Serves other UV assets from root (except index.html)
 console.log('[INIT - Server] Registering / (UV Frontend) static handler...');
 fastify.register(fastifyStatic, {
     root: publicPath,
     decorateReply: true,
     prefix: '/',
-    index: "index.html",
+    index: false, // Disable automatic index serving
 });
 console.log('[INIT - Server] Registered / (UV Frontend) static handler OK.');
 
