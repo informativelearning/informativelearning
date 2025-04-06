@@ -135,7 +135,7 @@ console.log('[INIT - Server] Fastify instance created.');
 
 // Serves custom index.html at root
 fastify.get('/', (request, reply) => {
-    reply.sendFile('/welcome/homepage.html', localStaticPath); // Use your custom file name
+    reply.sendFile('welcome/homepage.html', localStaticPath); // Use your custom file name
 });
 
 // Serves other UV assets from root (except index.html)
