@@ -9,7 +9,6 @@
   
   // Define all public pages that don't require verification
   const publicPages = [
-    'index.html', 
     'about.html', 
     'contact.html',
     'homepage.html', 

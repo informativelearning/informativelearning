@@ -165,6 +165,95 @@ fastify.register(fastifyStatic, {
 });
 console.log('[INIT - Server] Registered static file handlers OK.');
 
+// --- Public API Routes ---
+console.log('[INIT - Server] Registering Public API routes...');
+
+// API: Register Device
+fastify.post('/api/register-device', async (request, reply) => {
+    const { deviceId } = request.body || {};
+    console.log(`[API] POST /api/register-device for ID: ${deviceId}`);
+    
+    if (!deviceId) return reply.code(400).send({ error: 'Device ID required' });
+    if (!pool) return reply.code(503).send({ error: 'Database not connected' });
+    
+    try {
+        // Check if device already exists
+        const checkResult = await pool.query('SELECT * FROM verified_devices WHERE "deviceId" = $1', [deviceId]);
+        
+        if (checkResult.rowCount > 0) {
+            // Device already registered
+            return reply.send({ 
+                success: true, 
+                message: 'Device already registered',
+                verified: checkResult.rows[0].verified === 1
+            });
+        }
+        
+        // Insert new unverified device
+        const result = await pool.query(`
+            INSERT INTO verified_devices ("deviceId", verified, "verifiedAt")
+            VALUES ($1, 0, NOW())
+        `, [deviceId]);
+        
+        reply.send({ 
+            success: true, 
+            message: 'Device registered successfully, awaiting verification' 
+        });
+    } catch (err) {
+        console.error('[API Error] /api/register-device:', err);
+        reply.code(500).send({ error: 'Database query failed' });
+    }
+});
+
+// API: Check Verification Status
+fastify.get('/api/check-verification', async (request, reply) => {
+    const deviceId = request.query.deviceId;
+    console.log(`[API] GET /api/check-verification for ID: ${deviceId}`);
+    
+    if (!deviceId) return reply.code(400).send({ error: 'Device ID required' });
+    if (!pool) return reply.code(503).send({ error: 'Database not connected' });
+    
+    try {
+        const result = await pool.query(`
+            SELECT 
+                verified, 
+                "verification_expires_at", 
+                access_proxy, 
+                access_games, 
+                access_other 
+            FROM verified_devices 
+            WHERE "deviceId" = $1
+        `, [deviceId]);
+        
+        if (result.rowCount === 0) {
+            return reply.code(404).send({ 
+                verified: false, 
+                message: 'Device not registered' 
+            });
+        }
+        
+        const device = result.rows[0];
+        const now = Date.now();
+        const isExpired = device.verification_expires_at && now > device.verification_expires_at;
+        
+        reply.send({
+            verified: device.verified === 1 && !isExpired,
+            expired: isExpired,
+            access: {
+                proxy: device.access_proxy === 1,
+                games: device.access_games === 1,
+                other: device.access_other
+            },
+            expiresAt: device.verification_expires_at
+        });
+    } catch (err) {
+        console.error('[API Error] /api/check-verification:', err);
+        reply.code(500).send({ error: 'Database query failed' });
+    }
+});
+
+console.log('[INIT - Server] Registered Public API routes OK.');
+
 // --- Admin Page & API Routes ---
 console.log('[INIT - Server] Registering Admin routes...');
 fastify.register(async function adminApiRoutes(fastify, options) {
