@@ -29,10 +29,10 @@
 </head>
 <body>
     <h1>Device Verification Admin</h1>
-
+    
     <div class="form-section">
         <h2>Add / Update Device Verification</h2>
-        <form id="verifyForm">
+        <form id="verifyForm" onsubmit="return false;"> <!-- Added onsubmit="return false;" -->
             <div>
                 <label for="deviceId">Device ID:</label>
                 <input type="text" id="deviceId" name="deviceId" required size="50" placeholder="Enter Device ID from user">
@@ -65,7 +65,7 @@
                 <label class="permission-label" for="access_other">Other Access</label>
             </div>
             <br>
-            <button type="submit" id="submitButton">Verify / Update Device</button>
+            <button type="button" id="submitButton">Verify / Update Device</button> <!-- Changed to type="button" -->
         </form>
     </div>
 
@@ -91,18 +91,14 @@
     <p id="statusMessage"></p>
 
     <script>
-        // DOM Elements
+        console.log("Script initialized");
         const verifyForm = document.getElementById('verifyForm');
-        const deviceIdInput = document.getElementById('deviceId');
+        const submitButton = document.getElementById('submitButton');
         const devicesTableBody = document.getElementById('devicesTableBody');
         const statusMessageEl = document.getElementById('statusMessage');
         const durationSelect = document.getElementById('duration');
         const customDurationDiv = document.getElementById('customDuration');
         const daysInput = document.getElementById('days');
-        const submitButton = document.getElementById('submitButton');
-        
-        // Console logging for debugging
-        console.log("Script initialized");
         
         // Handle custom duration visibility
         durationSelect.addEventListener('change', function() {
@@ -168,16 +164,11 @@
             }
         }
 
-        // Fixed verify device function - now properly prevents default form action
-        async function verifyDevice(event) {
-            // Important! Prevent the default form submission
-            event.preventDefault(); 
-            console.log("Form submission prevented, handling verification...");
+        // Changed how we handle form submission - now using a dedicated function
+        async function verifyDevice() {
+            console.log("verifyDevice function called");
             
-            // Disable submit button to prevent double-submission
-            submitButton.disabled = true;
-            
-            const deviceId = deviceIdInput.value.trim();
+            const deviceId = document.getElementById('deviceId').value.trim();
             const durationType = durationSelect.value;
             let days;
             
@@ -194,13 +185,11 @@
 
             if (!deviceId) {
                 showStatus('Device ID cannot be empty.', true);
-                submitButton.disabled = false;
                 return;
             }
             
             if (isNaN(days) || days < 1) {
                 showStatus('Invalid number of days.', true);
-                submitButton.disabled = false;
                 return;
             }
 
@@ -220,7 +209,8 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(body)
                 });
-                console.log("Response received, status:", response.status);
+                
+                console.log("Response received:", response);
                 
                 const result = await response.json();
                 console.log("Response JSON:", result);
@@ -229,6 +219,7 @@
                     throw new Error(result.error || `HTTP error! status: ${response.status}`);
                 }
 
+                console.log("Verify response:", result);
                 showStatus(`Device ${deviceId} verified/updated successfully.`);
                 verifyForm.reset(); // Clear the form
                 customDurationDiv.style.display = 'none'; // Reset custom duration visibility
@@ -236,13 +227,12 @@
             } catch (error) {
                 console.error('Error verifying device:', error);
                 showStatus(`Error verifying device: ${error.message}`, true);
-            } finally {
-                submitButton.disabled = false; // Re-enable submit button
             }
         }
-
-        // Add debounce to prevent accidental double-submission
-        const verifyDeviceDebounced = debounce(verifyDevice, 300);
+        
+        // Use the click event on the submit button instead of form submit
+        submitButton.addEventListener('click', verifyDevice);
+        console.log("Submit button click event listener attached");
 
         async function removeDevice(deviceId) {
             if (!deviceId) return;
@@ -318,8 +308,8 @@
                     const verifyButton = document.createElement('button');
                     verifyButton.textContent = 'Verify';
                     verifyButton.onclick = () => {
-                        deviceIdInput.value = device.deviceId;
-                        deviceIdInput.focus();
+                        document.getElementById('deviceId').value = device.deviceId;
+                        document.getElementById('deviceId').focus();
                     };
                     actionsCell.appendChild(verifyButton);
                 }
@@ -327,10 +317,7 @@
         }
 
         // --- Initialization ---
-        // Key fix: Properly attach event listener that prevents form submission
-        verifyForm.addEventListener('submit', verifyDeviceDebounced);
-        console.log("Form submit event listener attached");
-        
+        // Removed the form submit event listener since we're using button click now
         fetchDevices(); // Load initial device list when page loads
         
         // Auto-refresh the device list every 60 seconds
