@@ -23,8 +23,10 @@
     <meta name="googlebot" content="index, follow, snippet" />
     <link rel="shortcut icon" content="favicon.ico" />
     <link rel="stylesheet" href="index.css" />
+    <!-- Important: Load deviceId.js and verify.js directly, not deferred -->
     <script src="js/deviceId.js"></script>
     <script src="js/verify.js"></script>
+    <!-- Other scripts can be deferred -->
     <script src="baremux/index.js" defer></script>
     <script src="epoxy/index.js" defer></script>
     <script src="uv/uv.bundle.js" defer></script>
@@ -191,27 +193,34 @@
         try {
           // Check if we're in an iframe
           if (window.self !== window.top) {
-            // Try to access parent location - will throw error if cross-origin
-            // But if we're in an about:blank iframe, it should be same-origin
-            return window.parent.location.href.startsWith('about:blank');
-          } else {
-            // Check if our own page is about:blank
-            return window.location.href.startsWith('about:blank');
+            // Attempt to access parent location - this will fail if cross-origin
+            var parentUrl = window.parent.location.href;
+            return parentUrl.startsWith('about:blank');
           }
+          return false;
         } catch (e) {
-          // If we can't access parent due to cross-origin, we're likely not in about:blank
-          // But let's check if we have the 'inAboutBlank' localStorage flag set from before
-          return localStorage.getItem('inAboutBlank') === 'true';
+          // If we can't access parent, we're in a cross-origin iframe
+          // Let's check our sessionStorage flag as a backup
+          return sessionStorage.getItem('inAboutBlank') === 'true';
         }
       }
 
       // Function to open the current page in about:blank
       function openInAboutBlank() {
-        // Set a flag in localStorage before opening the new window
-        localStorage.setItem('inAboutBlank', 'true');
+        // Set a flag to identify we've been through this process
+        try {
+          sessionStorage.setItem('inAboutBlank', 'true');
+        } catch (e) {
+          // Handle potential quota errors
+          console.warn("Could not set sessionStorage flag", e);
+        }
         
+        // Open the about:blank window
         var win = window.open('about:blank', '_blank');
         if (win) {
+          var currentUrl = window.location.href;
+          
+          // Write to the new document with the embedded iframe
           win.document.write(`
             <!DOCTYPE html>
             <html>
@@ -222,55 +231,76 @@
                   iframe { width: 100%; height: 100%; border: none; }
                 </style>
                 <script>
-                  // Set the localStorage flag in the new window as well
-                  localStorage.setItem('inAboutBlank', 'true');
-                </script>
+                  // Set the sessionStorage flag in the new window
+                  try {
+                    sessionStorage.setItem('inAboutBlank', 'true');
+                  } catch(e) {
+                    console.warn("Could not set sessionStorage flag", e);
+                  }
+                <\/script>
               </head>
               <body>
-                <iframe src="${window.location.href}"></iframe>
+                <iframe src="${currentUrl}"></iframe>
               </body>
             </html>
           `);
+          win.document.close(); // Important: close the document for writing
         } else {
           alert('Popup blocked. Please allow popups for this site to continue.');
         }
       }
 
-      // On page load
-      document.addEventListener('DOMContentLoaded', function() {
-        // Check for the 'skipAboutBlank' URL parameter as an additional override
-        const urlParams = new URLSearchParams(window.location.search);
-        const skipCheck = urlParams.get('skipAboutBlank') === 'true';
+      // Main initialization function
+      function initializePage() {
+        var inAboutBlank = isInAboutBlank();
         
-        // If we're in an about:blank iframe or we have the skip parameter, show the content
-        if (isInAboutBlank() || skipCheck) {
+        // Debug info - for testing only, can be removed
+        console.log("In about:blank iframe detection:", inAboutBlank);
+
+        if (inAboutBlank) {
+          // We're in an about:blank iframe, show content
           document.body.classList.remove('content-hidden');
-          document.getElementById('aboutBlankPopup').style.display = 'none';
-          // Remember this state
-          localStorage.setItem('inAboutBlank', 'true');
+          var popupElement = document.getElementById('aboutBlankPopup');
+          if (popupElement) {
+            popupElement.style.display = 'none';
+          }
+          
+          // Store this state
+          try {
+            sessionStorage.setItem('inAboutBlank', 'true');
+          } catch (e) {
+            console.warn("Could not set sessionStorage flag", e);
+          }
         } else {
-          // Otherwise, keep showing the popup and hide the content
+          // We need to show the about:blank popup
           document.body.classList.add('content-hidden');
-          document.getElementById('aboutBlankPopup').style.display = 'flex';
+          var popupElement = document.getElementById('aboutBlankPopup');
+          if (popupElement) {
+            popupElement.style.display = 'flex';
+          }
         }
         
         // Apply dark mode if needed
         if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
           document.body.classList.add('dark-mode');
         }
-      });
+      }
 
-      // Redundant check with window.onload for better compatibility
+      // Call the initialization when the DOM is ready
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializePage);
+      } else {
+        // DOM is already ready
+        initializePage();
+      }
+
+      // Backup initialization with window.onload
       window.onload = function() {
-        // If DOMContentLoaded hasn't fired properly, this will serve as a backup
-        if (document.body.classList.contains('content-hidden')) {
-          const urlParams = new URLSearchParams(window.location.search);
-          const skipCheck = urlParams.get('skipAboutBlank') === 'true';
-          
-          if (isInAboutBlank() || skipCheck || localStorage.getItem('inAboutBlank') === 'true') {
-            document.body.classList.remove('content-hidden');
-            document.getElementById('aboutBlankPopup').style.display = 'none';
-          }
+        // Check if we've already initialized the page
+        if (document.body.classList.contains('content-hidden') && 
+            document.getElementById('aboutBlankPopup').style.display !== 'none' &&
+            isInAboutBlank()) {
+          initializePage();
         }
       };
     </script>
