@@ -23,131 +23,25 @@
     <meta name="googlebot" content="index, follow, snippet" />
     <link rel="shortcut icon" content="favicon.ico" />
     
-    <!-- Debug helper function - common for both scripts -->
+    <!-- Script initialization to ensure proper loading order -->
     <script>
+      // Global initialization flag
+      window.uvInitialized = false;
+
+      // Debug helper function
       function logDebug(message) {
         console.log("[UV Debug] " + message);
       }
       
-      // Global initialization flag
-      window.uvInitialized = false;
-    </script>
-    
-    <!-- deviceId.js code - INJECTED INLINE -->
-    <script>
-      // Beginning of deviceId.js functionality
-      (function() {
-        logDebug("deviceId.js executing");
-        
-        // Device ID generation and storage
-        function generateDeviceId() {
-          try {
-            // Check if device ID already exists
-            let deviceId = localStorage.getItem('uv_device_id');
-            
-            if (!deviceId) {
-              // Generate a new device ID
-              deviceId = 'dev_' + Math.random().toString(36).substring(2, 15) + 
-                         Math.random().toString(36).substring(2, 15);
-              
-              // Store the device ID
-              localStorage.setItem('uv_device_id', deviceId);
-              logDebug("Generated new device ID: " + deviceId);
-            } else {
-              logDebug("Using existing device ID: " + deviceId);
-            }
-            
-            // Expose the device ID for verify.js to use
-            window.uvDeviceId = deviceId;
-            
-            // Signal that deviceId.js is loaded
-            window.deviceIdLoaded = true;
-            logDebug("deviceId.js functionality initialized");
-            
-            // Dispatch event for verify.js
-            const event = new CustomEvent('deviceIdReady');
-            document.dispatchEvent(event);
-          } catch (e) {
-            console.error("Error in deviceId.js:", e);
-            // Attempt fallback
-            window.uvDeviceId = 'fallback_' + new Date().getTime();
-            window.deviceIdLoaded = true;
-          }
-        }
-        
-        // Initialize immediately
-        generateDeviceId();
-      })();
-    </script>
-    
-    <!-- verify.js code - INJECTED INLINE (loads after deviceId.js) -->
-    <script>
-      // Beginning of verify.js functionality
-      (function() {
-        logDebug("verify.js executing");
-        
-        function verifyDevice() {
-          try {
-            // Check if deviceId.js has finished loading
-            if (!window.deviceIdLoaded || !window.uvDeviceId) {
-              logDebug("Waiting for device ID to be available");
-              return false;
-            }
-            
-            const deviceId = window.uvDeviceId;
-            logDebug("Verifying device ID: " + deviceId);
-            
-            // Add verification logic here
-            // For example, checking if ID format is valid
-            const isValid = deviceId.startsWith('dev_') && deviceId.length > 10;
-            
-            if (isValid) {
-              logDebug("Device verification successful");
-              
-              // Additional verification logic could go here
-              // ...
-              
-              // Signal that verify.js is loaded
-              window.verifyLoaded = true;
-              
-              return true;
-            } else {
-              logDebug("Device verification failed - invalid ID format");
-              return false;
-            }
-          } catch (e) {
-            console.error("Error in verify.js:", e);
-            return false;
-          }
-        }
-        
-        // Function to initialize verification when deviceId is ready
-        function initVerification() {
-          if (verifyDevice()) {
-            logDebug("Verification completed successfully");
-            window.uvInitialized = true;
-          } else {
-            logDebug("Verification failed or incomplete");
-          }
-        }
-        
-        // Listen for deviceId ready event
-        document.addEventListener('deviceIdReady', function() {
-          logDebug("deviceIdReady event received");
-          initVerification();
-        });
-        
-        // Also attempt verification immediately if deviceId is already available
-        if (window.deviceIdLoaded && window.uvDeviceId) {
-          logDebug("deviceId already available, verifying immediately");
-          initVerification();
-        }
-      })();
-    </script>
-    
-    <!-- Main page initialization script -->
-    <script>
-      // About:blank detection - minimal version since this is already working
+      // Load deviceId.js first (no defer or async to ensure sequential loading)
+      document.write('<script src="deviceId.js"><\/script>');
+      
+      // Load verify.js immediately after deviceId.js
+      document.write('<script src="verify.js"><\/script>');
+      
+      logDebug("Scripts loaded in sequence via document.write");
+      
+      // About:blank detection
       function isInAboutBlank() {
         try {
           if (sessionStorage.getItem('inAboutBlank') === 'true') {
@@ -235,8 +129,6 @@
             document.body.classList.add('dark-mode');
           }
           
-          // Check if scripts are initialized
-          logDebug("Script initialization status: " + (window.uvInitialized ? "Complete" : "Pending"));
           window.pageInitialized = true;
         } catch (e) {
           console.error("Error in initialization:", e);
