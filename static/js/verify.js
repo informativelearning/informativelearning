@@ -187,7 +187,7 @@
         // If user tries to access a protected path -> Redirect to public landing
         if (protectedPaths.includes(currentPath)) {
             console.log(`verify.js: Unverified user trying to access protected path ${currentPath}, redirecting to ${publicLandingPage}`);
-            window.location.replace(publicLandingPage);
+            window.location.replace(publicLandingPage); // This already uses /welcome/homepage.html
         } else {
              // Unverified user is on a public page, allow access.
              console.log(`verify.js: Unverified user on public path ${currentPath}, allowing access.`);
