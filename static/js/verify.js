@@ -53,8 +53,8 @@
     // --- Function to open the verified area popup & redirect original tab ---
     function openDashboardAndRedirect(currentDeviceId) {
         console.log("verify.js: User verified, attempting to open dashboard popup...");
-        const win = window.open('', '_blank'); // Open blank target first
-  
+        const win = window.open('about:blank', '_blank'); // Open about:blank popup
+        
         if (!win || win.closed || typeof win.closed == 'undefined') {
             console.warn("verify.js: Popup blocked or failed to open.");
             alert('Popup blocked! Please allow popups for this site and reload to access verified content.');
@@ -62,7 +62,8 @@
         }
         
         try {
-            win.document.title = 'Dashboard'; // Set title early
+            // Set the title of the popup window
+            win.document.title = 'Dashboard';
             
             // Set favicon for the popup
             const faviconLink = win.document.createElement('link');
@@ -70,22 +71,39 @@
             faviconLink.href = faviconPath;
             win.document.head.appendChild(faviconLink);
             
+            // Create an iframe to load the verified landing page content
             setTimeout(() => {
                 try {
-                    // Add a query parameter with deviceId for authentication in the new window
-                    const targetUrl = `${verifiedLandingPage}?deviceId=${encodeURIComponent(currentDeviceId)}`;
-                    console.log(`verify.js: Setting popup location to ${targetUrl}`);
+                    // Clear any existing content
+                    win.document.body.innerHTML = '';
                     
-                    // Load the verified landing page in the popup
-                    win.location.href = targetUrl;
+                    // Create a fullscreen iframe
+                    const iframe = win.document.createElement('iframe');
+                    iframe.style.position = 'fixed';
+                    iframe.style.top = '0';
+                    iframe.style.left = '0';
+                    iframe.style.width = '100%';
+                    iframe.style.height = '100%';
+                    iframe.style.border = 'none';
+                    iframe.style.margin = '0';
+                    iframe.style.padding = '0';
+                    iframe.style.overflow = 'hidden';
                     
-                    // Redirect the original tab to a decoy page (or leave on current public page)
-                    // Uncomment the next line if you want the original tab to redirect elsewhere
-                    // window.location.replace(publicLandingPage);
+                    // Set the source to the verified landing page with deviceId
+                    iframe.src = `${verifiedLandingPage}?deviceId=${encodeURIComponent(currentDeviceId)}`;
                     
-                    console.log("verify.js: Popup successfully configured.");
+                    // Add the iframe to the popup's document
+                    win.document.body.appendChild(iframe);
+                    
+                    // Ensure the body takes up the full window
+                    win.document.body.style.margin = '0';
+                    win.document.body.style.padding = '0';
+                    win.document.body.style.overflow = 'hidden';
+                    win.document.body.style.height = '100vh';
+                    
+                    console.log("verify.js: Popup with iframe successfully configured.");
                 } catch (innerError) {
-                    console.error("verify.js: Error configuring popup:", innerError);
+                    console.error("verify.js: Error configuring popup iframe:", innerError);
                     win.close(); // Close the popup if configuration fails
                     alert('Error loading dashboard. Please try again.');
                 }
@@ -187,7 +205,7 @@
         // If user tries to access a protected path -> Redirect to public landing
         if (protectedPaths.includes(currentPath)) {
             console.log(`verify.js: Unverified user trying to access protected path ${currentPath}, redirecting to ${publicLandingPage}`);
-            window.location.replace(publicLandingPage); // This already uses /welcome/homepage.html
+            window.location.replace(publicLandingPage);
         } else {
              // Unverified user is on a public page, allow access.
              console.log(`verify.js: Unverified user on public path ${currentPath}, allowing access.`);
