@@ -22,41 +22,69 @@
     />
     <meta name="googlebot" content="index, follow, snippet" />
     <link rel="shortcut icon" content="favicon.ico" />
-    <link rel="stylesheet" href="index.css" />
-    <!-- Important: deviceId.js and verify.js placed at the top without defer -->
-    <script src="js/deviceId.js"></script>
-    <script src="js/verify.js"></script>
-    <!-- Early initialization script to ensure proper functioning of the page -->
+    <!-- Script initialization to ensure deviceId.js and verify.js work properly -->
     <script>
-      // Improved function to check if the page is in an about:blank iframe
+      // Global initialization flag
+      window.uvInitialized = false;
+
+      // Debug helper function - can be removed in production
+      function logDebug(message) {
+        console.log("[UV Debug] " + message);
+      }
+
+      // Function to manually load scripts
+      function loadScript(src, callback) {
+        var script = document.createElement('script');
+        script.type = 'text/javascript';
+        script.src = src;
+        script.onload = callback;
+        script.onerror = function() {
+          logDebug("Error loading script: " + src);
+        };
+        document.head.appendChild(script);
+      }
+
+      // Ensure scripts load in correct order
+      function loadScriptsSequentially() {
+        logDebug("Starting sequential script loading");
+        // Load deviceId.js first
+        loadScript("js/deviceId.js", function() {
+          logDebug("deviceId.js loaded");
+          // Then load verify.js
+          loadScript("js/verify.js", function() {
+            logDebug("verify.js loaded");
+            // Mark scripts as initialized
+            window.uvInitialized = true;
+            logDebug("Core scripts initialized");
+            
+            // Check if DOM is already loaded
+            if (document.readyState !== "loading") {
+              initializePage();
+            }
+          });
+        });
+      }
+
+      // Start loading scripts immediately
+      loadScriptsSequentially();
+      
+      // About:blank detection - minimal version since this is already working
       function isInAboutBlank() {
         try {
-          // Check URL parameter first (most reliable)
-          const urlParams = new URLSearchParams(window.location.search);
-          if (urlParams.get('skipAB') === 'true') {
-            return true;
-          }
-          
-          // Check sessionStorage
           if (sessionStorage.getItem('inAboutBlank') === 'true') {
             return true;
           }
           
-          // Check if we're in an iframe
           if (window.self !== window.top) {
             try {
-              // Attempt to access parent location - will fail if cross-origin
-              const parentUrl = window.parent.location.href;
+              var parentUrl = window.parent.location.href;
               return parentUrl.startsWith('about:blank');
             } catch (e) {
-              // If error accessing parent, check referrer as fallback
-              return document.referrer === '' && window.location.href !== window.location.origin + '/';
+              return sessionStorage.getItem('inAboutBlank') === 'true';
             }
           }
           return false;
         } catch (e) {
-          console.error("Error in isInAboutBlank:", e);
-          // Default to false on error
           return false;
         }
       }
@@ -64,19 +92,12 @@
       // Function to open the current page in about:blank
       function openInAboutBlank() {
         try {
-          // Set flag in sessionStorage
           sessionStorage.setItem('inAboutBlank', 'true');
           
-          // Open about:blank window
-          const win = window.open('about:blank', '_blank');
+          var win = window.open('about:blank', '_blank');
           if (win) {
-            // Get current URL and add skipAB parameter
-            let currentUrl = window.location.href;
-            const urlObj = new URL(currentUrl);
-            urlObj.searchParams.set('skipAB', 'true');
-            currentUrl = urlObj.toString();
+            var currentUrl = window.location.href;
             
-            // Write to the new document
             win.document.write(`
               <!DOCTYPE html>
               <html>
@@ -87,12 +108,9 @@
                     iframe { width: 100%; height: 100%; border: none; }
                   </style>
                   <script>
-                    // Set sessionStorage in the new window
                     try {
                       sessionStorage.setItem('inAboutBlank', 'true');
-                    } catch(e) {
-                      console.warn("Could not set sessionStorage flag", e);
-                    }
+                    } catch(e) {}
                   <\/script>
                 </head>
                 <body>
@@ -100,84 +118,70 @@
                 </body>
               </html>
             `);
-            win.document.close(); // Close the document for writing
+            win.document.close();
           } else {
             alert('Popup blocked. Please allow popups for this site to continue.');
           }
         } catch (e) {
-          console.error("Error in openInAboutBlank:", e);
-          alert('An error occurred when opening about:blank. Please try again.');
+          console.error("Error opening about:blank:", e);
         }
       }
 
-      // Main initialization function with proper error handling
+      // Main initialization function
       function initializePage() {
         try {
-          const inAboutBlank = isInAboutBlank();
-          console.log("In about:blank iframe detection:", inAboutBlank);
+          logDebug("Initializing page");
+          var inAboutBlank = isInAboutBlank();
+          logDebug("In about:blank: " + inAboutBlank);
 
           if (inAboutBlank) {
-            // In about:blank iframe, show content
             document.body.classList.remove('content-hidden');
-            const popupElement = document.getElementById('aboutBlankPopup');
+            var popupElement = document.getElementById('aboutBlankPopup');
             if (popupElement) {
               popupElement.style.display = 'none';
             }
             
-            // Store state
             try {
               sessionStorage.setItem('inAboutBlank', 'true');
-            } catch (e) {
-              console.warn("Could not set sessionStorage flag", e);
-            }
+            } catch (e) {}
           } else {
-            // Show about:blank popup
             document.body.classList.add('content-hidden');
-            const popupElement = document.getElementById('aboutBlankPopup');
+            var popupElement = document.getElementById('aboutBlankPopup');
             if (popupElement) {
               popupElement.style.display = 'flex';
             }
           }
           
-          // Apply dark mode if needed
           if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
             document.body.classList.add('dark-mode');
           }
+          
+          // Check if scripts are initialized
+          if (!window.uvInitialized) {
+            logDebug("Scripts not yet initialized during page init");
+          }
         } catch (e) {
-          console.error("Error in initializePage:", e);
-          // Show content as fallback on error
+          console.error("Error in initialization:", e);
+          // Show content as fallback
           document.body.classList.remove('content-hidden');
         }
       }
 
-      // Ensure scripts are executed in the correct order
-      // Execute immediately - no waiting for DOM
-      (function() {
-        try {
-          // Check if we need to immediately remove content-hidden
-          if (isInAboutBlank()) {
-            // If we're already in about:blank, ensure body isn't hidden when possible
-            if (document.body) {
-              document.body.classList.remove('content-hidden');
-            }
-          }
-        } catch (e) {
-          console.error("Error in immediate check:", e);
-        }
-      })();
-
-      // Multiple event handlers to ensure initialization happens
-      document.addEventListener('DOMContentLoaded', initializePage);
+      // Set up initialization
+      document.addEventListener('DOMContentLoaded', function() {
+        logDebug("DOMContentLoaded event fired");
+        initializePage();
+      });
+      
+      // Backup initialization
       window.addEventListener('load', function() {
-        // Check if already initialized
-        if (document.body.classList.contains('content-hidden') && 
-            document.getElementById('aboutBlankPopup') && 
-            isInAboutBlank()) {
+        logDebug("Window load event fired");
+        if (!window.pageInitialized) {
           initializePage();
         }
       });
     </script>
-    <!-- Other scripts can be deferred -->
+    <link rel="stylesheet" href="index.css" />
     <script src="baremux/index.js" defer></script>
     <script src="epoxy/index.js" defer></script>
     <script src="uv/uv.bundle.js" defer></script>
