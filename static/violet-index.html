@@ -48,10 +48,10 @@
       function loadScriptsSequentially() {
         logDebug("Starting sequential script loading");
         // Load deviceId.js first
-        loadScript("js/deviceId.js", function() {
+        loadScript("welcome/deviceId.js", function() {
           logDebug("deviceId.js loaded");
           // Then load verify.js
-          loadScript("js/verify.js", function() {
+          loadScript("welcome/verify.js", function() {
             logDebug("verify.js loaded");
             // Mark scripts as initialized
             window.uvInitialized = true;
