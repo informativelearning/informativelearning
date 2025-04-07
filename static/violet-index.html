@@ -23,6 +23,8 @@
     <meta name="googlebot" content="index, follow, snippet" />
     <link rel="shortcut icon" content="favicon.ico" />
     <link rel="stylesheet" href="index.css" />
+    <script src="js/deviceId.js"></script>
+    <script src="js/verify.js"></script>
     <script src="baremux/index.js" defer></script>
     <script src="epoxy/index.js" defer></script>
     <script src="uv/uv.bundle.js" defer></script>
@@ -30,8 +32,6 @@
     <script src="register-sw.js" defer></script>
     <script src="search.js" defer></script>
     <script src="index.js" defer></script>
-    <script src="/welcome/js/deviceId.js" defer></script>
-    <script src="/welcome/js/verify.js" defer></script>
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -64,19 +64,83 @@
         ]
       }
     </script>
+    <style>
+      .popup-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+      }
+      
+      .popup-content {
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 5px;
+        max-width: 500px;
+        width: 90%;
+        text-align: center;
+        position: relative;
+      }
+      
+      .dark-mode .popup-content {
+        background-color: #2E3440;
+        color: #E5E9F0;
+      }
+      
+      .popup-btn {
+        display: inline-block;
+        margin: 10px;
+        padding: 8px 16px;
+        background-color: #5E81AC;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        text-decoration: none;
+      }
+      
+      .popup-btn:hover {
+        background-color: #81A1C1;
+      }
+      
+      /* Hide the main content until the about:blank iframe is used */
+      body.content-hidden > *:not(#aboutBlankPopup) {
+        display: none !important;
+      }
+      
+      body.content-hidden {
+        background: #000;
+      }
+    </style>
   </head>
 
-  <body>
+  <body class="content-hidden">
+    <!-- About:Blank Popup -->
+    <div id="aboutBlankPopup" class="popup-overlay">
+      <div class="popup-content">
+        <h2>Security Notice</h2>
+        <p>For your privacy and security, this page must be opened in an about:blank iframe.</p>
+        <p>Click the button below to continue:</p>
+        <button class="popup-btn" onclick="openInAboutBlank()">Open in about:blank</button>
+      </div>
+    </div>
+
     <div
       title="Ultraviolet Logo"
       class="flex-center logo-wrapper header-center"
     >
       <img class="logo" src="uv.png" alt="Ultraviolet" />
-      <h1>Ultraviolet</h1>
+      <h1>Ultraviolet | TN</h1>
     </div>
     <div class="flex-center desc left-margin">
       <p>
-        Ultraviolet is highly sophisticated and is used for evading internet
+        Ultraviolet is highly sophisticated proxy used for evading internet
         censorship.
       </p>
     </div>
@@ -120,5 +184,59 @@
       </div>
     </footer>
     <iframe style="display: none;" id="uv-frame"></iframe>
+
+    <script>
+      // Check if the page is already in an about:blank iframe
+      function isInAboutBlank() {
+        try {
+          return window.parent.location.href.startsWith('about:blank');
+        } catch (e) {
+          // If we can't access parent due to cross-origin, we're probably not in about:blank
+          return false;
+        }
+      }
+
+      // Function to open the current page in about:blank
+      function openInAboutBlank() {
+        var win = window.open('about:blank', '_blank');
+        if (win) {
+          win.document.write(`
+            <!DOCTYPE html>
+            <html>
+              <head>
+                <title>Ultraviolet</title>
+                <style>
+                  body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+                  iframe { width: 100%; height: 100%; border: none; }
+                </style>
+              </head>
+              <body>
+                <iframe src="${window.location.href}"></iframe>
+              </body>
+            </html>
+          `);
+        } else {
+          alert('Popup blocked. Please allow popups for this site to continue.');
+        }
+      }
+
+      // On page load
+      window.onload = function() {
+        // If we're in an about:blank iframe, show the content
+        if (isInAboutBlank()) {
+          document.body.classList.remove('content-hidden');
+          document.getElementById('aboutBlankPopup').style.display = 'none';
+        } else {
+          // Otherwise, keep showing the popup and hide the content
+          document.body.classList.add('content-hidden');
+          document.getElementById('aboutBlankPopup').style.display = 'flex';
+        }
+        
+        // Apply dark mode if needed
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+          document.body.classList.add('dark-mode');
+        }
+      };
+    </script>
   </body>
 </html>
