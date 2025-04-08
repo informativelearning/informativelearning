@@ -1,7 +1,7 @@
-// static/js/verify.js (Fixed version)
+// static/js/verify.js (Fixed version with direct access fix)
 
 (async function() {
-    console.log("verify.js (Fixed version 3.0) executing...");
+    console.log("verify.js (Fixed version 3.1) executing...");
   
     if (window.self !== window.top) {
         console.log("verify.js: Skipping, running in iframe.");
@@ -151,6 +151,15 @@
     if (isVerified) {
         // --- Verified User ---
         console.log("verify.js: User is VERIFIED.");
+        
+        // Mark this path as processed
+        sessionStorage.setItem(processedKey, 'true');
+  
+        // SPECIAL CASE: If verified user directly accesses truemath.html, allow it
+        if (currentPath === '/welcome/truemath.html') {
+            console.log("verify.js: Verified user directly accessing truemath.html, allowing access");
+            return; // Stop here and allow access
+        }
   
         // Trigger popup/decoy IF user lands on a public page
         if (publicPaths.includes(currentPath)) {
