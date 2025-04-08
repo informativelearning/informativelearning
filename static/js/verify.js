@@ -32,8 +32,7 @@
         '/welcome/feature.html',
         '/welcome/team.html',
         '/welcome/testimonial.html',
-        '/welcome/scientific.html',
-        '/index.html'  // Add index.html here if it's a public page
+        '/welcome/scientific.html'
         // Add any other truly public page paths here
     ];
   
@@ -49,34 +48,58 @@
     ];
   
     console.log(`verify.js: Current Path: ${currentPath}`);
+
+    // Flag to track if we've already processed this page load
+    // This prevents infinite loops and duplicated popups
+    const processedKey = `processedPath_${currentPath}`;
+    const alreadyProcessed = sessionStorage.getItem(processedKey);
+    
+    if (alreadyProcessed) {
+        console.log(`verify.js: Already processed this path (${currentPath}), skipping actions`);
+        return; // Stop execution if we've already processed this path in this session
+    }
   
     // --- Function to open the verified area popup & redirect original tab ---
     function openDashboardAndRedirect(currentDeviceId) {
         console.log("verify.js: User verified, attempting to open dashboard popup...");
-        const win = window.open(verifiedLandingPage + '?deviceId=' + encodeURIComponent(currentDeviceId), '_blank');
         
-        if (!win || win.closed || typeof win.closed == 'undefined') {
-            console.warn("verify.js: Popup blocked or failed to open.");
-            alert('Popup blocked! Please allow popups for this site and reload to access verified content.');
-            return false; // Indicate failure
+        // Set flag to prevent recursive processing
+        sessionStorage.setItem(processedKey, 'true');
+        
+        try {
+            // Open popup with deviceId
+            const popupUrl = `${verifiedLandingPage}?deviceId=${encodeURIComponent(currentDeviceId)}`;
+            const win = window.open(popupUrl, '_blank');
+            
+            if (!win || win.closed || typeof win.closed == 'undefined') {
+                console.warn("verify.js: Popup blocked or failed to open.");
+                alert('Popup blocked! Please allow popups for this site and reload to access verified content.');
+                return false; // Indicate failure
+            }
+            
+            // After successful popup, redirect the original tab to public landing
+            // But only if we're not already there
+            if (currentPath !== publicLandingPage) {
+                console.log("verify.js: Redirecting original tab to public landing...");
+                setTimeout(() => {
+                    window.location.href = publicLandingPage;
+                }, 100);
+            } else {
+                console.log("verify.js: Already on public landing, no redirect needed");
+            }
+            
+            return true; // Popup initially opened successfully
+        } catch (e) {
+            console.error("verify.js: Error in popup handling:", e);
+            return false;
         }
-        
-        // After successful popup, redirect the original tab to public landing
-        setTimeout(() => {
-            console.log("verify.js: Redirecting original tab to public landing...");
-            window.location.href = publicLandingPage;
-        }, 100);
-        
-        return true; // Popup initially opened successfully
     }
   
     // --- No Device ID Handling ---
     if (!deviceId) {
         console.log("verify.js: No deviceId found.");
         // If on a protected path -> Redirect
-        if (protectedPaths.includes(currentPath) || currentPath === proxyPath || 
-            currentPath.startsWith('/uv/') || currentPath.startsWith('/epoxy/') || 
-            currentPath.startsWith('/baremux/')) {
+        if (protectedPaths.includes(currentPath) || currentPath.startsWith(proxyPath)) {
              console.log(`verify.js: No deviceId, redirecting from protected path ${currentPath} to ${publicLandingPage}`);
              window.location.replace(publicLandingPage);
         } else { 
@@ -158,13 +181,10 @@
         // For coursebooks and collegecourses, use the 'other' permission if available
         // or default to allow for verified users
         else if (protectedPaths.includes(currentPath)) {
-            // Allow verified users to access all other protected paths by default
+            // We're allowing verified users to access all other protected paths by default
             console.log(`verify.js: Verified user accessing protected path: ${currentPath}`);
-            // Specifically allow access to truemath.html
-            if (currentPath === '/welcome/truemath.html') {
-                console.log(`verify.js: Verified user accessing truemath.html - allowed`);
-                return; // Explicitly allow and exit
-            }
+            // If you want to enforce specific permissions for these paths,
+            // add additional logic here
         }
         
         // If verified and on an allowed page, just stay
@@ -174,15 +194,15 @@
         // --- Unverified User (or API Error or Expired) ---
         console.log("verify.js: User is NOT verified (or API error/expired).");
         
-        // Check if the current path is protected
+        // Check if the current path is protected or starts with the proxy path
         const isOnProtectedPath = protectedPaths.includes(currentPath) || 
-                                  currentPath === '/' || currentPath.startsWith('/uv/') || 
-                                  currentPath.startsWith('/epoxy/') || currentPath.startsWith('/baremux/');
+                                  (currentPath === '/' || currentPath.startsWith('/uv/') || 
+                                   currentPath.startsWith('/epoxy/') || currentPath.startsWith('/baremux/'));
         
         // If user tries to access a protected path -> Redirect to public landing
         if (isOnProtectedPath) {
             console.log(`verify.js: Unverified user trying to access protected path ${currentPath}, redirecting to ${publicLandingPage}`);
-            window.location.replace(publicLandingPage); // Always redirect to homepage.html
+            window.location.replace(publicLandingPage);
         } else {
             // Unverified user is on a public page, allow access
             console.log(`verify.js: Unverified user on public path ${currentPath}, allowing access.`);
