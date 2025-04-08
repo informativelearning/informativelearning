@@ -1,7 +1,7 @@
 // static/js/verify.js (Fixed version)
 
 (async function() {
-    console.log("verify.js (Fixed version 2.0) executing...");
+    console.log("verify.js (Fixed version 3.0) executing...");
   
     if (window.self !== window.top) {
         console.log("verify.js: Skipping, running in iframe.");
@@ -32,7 +32,8 @@
         '/welcome/feature.html',
         '/welcome/team.html',
         '/welcome/testimonial.html',
-        '/welcome/scientific.html'
+        '/welcome/scientific.html',
+        '/index.html'  // Add index.html here if it's a public page
         // Add any other truly public page paths here
     ];
   
@@ -73,7 +74,9 @@
     if (!deviceId) {
         console.log("verify.js: No deviceId found.");
         // If on a protected path -> Redirect
-        if (protectedPaths.includes(currentPath) || currentPath.startsWith(proxyPath)) {
+        if (protectedPaths.includes(currentPath) || currentPath === proxyPath || 
+            currentPath.startsWith('/uv/') || currentPath.startsWith('/epoxy/') || 
+            currentPath.startsWith('/baremux/')) {
              console.log(`verify.js: No deviceId, redirecting from protected path ${currentPath} to ${publicLandingPage}`);
              window.location.replace(publicLandingPage);
         } else { 
@@ -155,10 +158,13 @@
         // For coursebooks and collegecourses, use the 'other' permission if available
         // or default to allow for verified users
         else if (protectedPaths.includes(currentPath)) {
-            // We're allowing verified users to access all other protected paths by default
+            // Allow verified users to access all other protected paths by default
             console.log(`verify.js: Verified user accessing protected path: ${currentPath}`);
-            // If you want to enforce specific permissions for these paths,
-            // add additional logic here
+            // Specifically allow access to truemath.html
+            if (currentPath === '/welcome/truemath.html') {
+                console.log(`verify.js: Verified user accessing truemath.html - allowed`);
+                return; // Explicitly allow and exit
+            }
         }
         
         // If verified and on an allowed page, just stay
@@ -168,15 +174,15 @@
         // --- Unverified User (or API Error or Expired) ---
         console.log("verify.js: User is NOT verified (or API error/expired).");
         
-        // Check if the current path is protected or starts with the proxy path
+        // Check if the current path is protected
         const isOnProtectedPath = protectedPaths.includes(currentPath) || 
-                                  (currentPath === '/' || currentPath.startsWith('/uv/') || 
-                                   currentPath.startsWith('/epoxy/') || currentPath.startsWith('/baremux/'));
+                                  currentPath === '/' || currentPath.startsWith('/uv/') || 
+                                  currentPath.startsWith('/epoxy/') || currentPath.startsWith('/baremux/');
         
         // If user tries to access a protected path -> Redirect to public landing
         if (isOnProtectedPath) {
             console.log(`verify.js: Unverified user trying to access protected path ${currentPath}, redirecting to ${publicLandingPage}`);
-            window.location.replace(publicLandingPage);
+            window.location.replace(publicLandingPage); // Always redirect to homepage.html
         } else {
             // Unverified user is on a public page, allow access
             console.log(`verify.js: Unverified user on public path ${currentPath}, allowing access.`);
