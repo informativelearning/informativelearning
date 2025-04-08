@@ -1,17 +1,17 @@
-// static/js/verify.js (Fixed version with direct access fix)
+// static/js/verify.js (Fixed version)
 
 (async function() {
-    console.log("verify.js (Fixed version 3.1) executing...");
+    console.log("verify.js (Final Fixed version 4.0) executing...");
   
     if (window.self !== window.top) {
         console.log("verify.js: Skipping, running in iframe.");
         return;
     }
   
-    // --- Configuration ---
+    // --- Configuration with ABSOLUTE paths ---
     const publicLandingPage = '/welcome/homepage.html';   // Public landing page path
     const verifiedLandingPage = '/welcome/truemath.html'; // Verified landing page / popup target path
-    const proxyPath = '/';                               // Path for the main proxy UI
+    const proxyPath = '/';                                // Path for the main proxy UI
     const faviconPath = '/welcome/favicon.ico';           // Path to the favicon for the popup
   
     // --- Get Device ID (from deviceId.js) ---
@@ -20,7 +20,9 @@
     console.log(`verify.js: Using deviceId: ${deviceId}`);
   
     // --- Page Definitions based on Pathname ---
+    // Always get the FULL path including starting slash
     const currentPath = window.location.pathname;
+    console.log(`verify.js: Current Path: ${currentPath}`);
   
     // Publicly accessible pages (full paths) - Anyone can see these
     const publicPaths = [
@@ -37,18 +39,15 @@
     ];
   
     // All paths that require *at least* general verification (verified=1 and not expired)
-    // Specific permissions are checked later if applicable.
     const protectedPaths = [
-        proxyPath, // Proxy UI root
         '/welcome/truemath.html',
         '/welcome/coursebooks.html',
         '/welcome/funinlearning.html', // Games page
-        '/welcome/collegecourses.html'
+        '/welcome/collegecourses.html',
+        '/' // Proxy UI root
         // Add any other paths that require login/verification
     ];
   
-    console.log(`verify.js: Current Path: ${currentPath}`);
-
     // Flag to track if we've already processed this page load
     // This prevents infinite loops and duplicated popups
     const processedKey = `processedPath_${currentPath}`;
@@ -58,17 +57,18 @@
         console.log(`verify.js: Already processed this path (${currentPath}), skipping actions`);
         return; // Stop execution if we've already processed this path in this session
     }
+    
+    // Mark this path as processed to prevent loops
+    sessionStorage.setItem(processedKey, 'true');
   
     // --- Function to open the verified area popup & redirect original tab ---
     function openDashboardAndRedirect(currentDeviceId) {
         console.log("verify.js: User verified, attempting to open dashboard popup...");
         
-        // Set flag to prevent recursive processing
-        sessionStorage.setItem(processedKey, 'true');
-        
         try {
-            // Open popup with deviceId
+            // Open popup with deviceId - ensure full URL
             const popupUrl = `${verifiedLandingPage}?deviceId=${encodeURIComponent(currentDeviceId)}`;
+            console.log(`verify.js: Opening popup to: ${popupUrl}`);
             const win = window.open(popupUrl, '_blank');
             
             if (!win || win.closed || typeof win.closed == 'undefined') {
@@ -80,10 +80,11 @@
             // After successful popup, redirect the original tab to public landing
             // But only if we're not already there
             if (currentPath !== publicLandingPage) {
-                console.log("verify.js: Redirecting original tab to public landing...");
+                console.log(`verify.js: Redirecting original tab to: ${publicLandingPage}`);
+                // Slight delay to ensure popup opens first
                 setTimeout(() => {
                     window.location.href = publicLandingPage;
-                }, 100);
+                }, 300);
             } else {
                 console.log("verify.js: Already on public landing, no redirect needed");
             }
@@ -99,7 +100,8 @@
     if (!deviceId) {
         console.log("verify.js: No deviceId found.");
         // If on a protected path -> Redirect
-        if (protectedPaths.includes(currentPath) || currentPath.startsWith(proxyPath)) {
+        if (protectedPaths.includes(currentPath) || currentPath.startsWith('/uv/') || 
+            currentPath.startsWith('/epoxy/') || currentPath.startsWith('/baremux/')) {
              console.log(`verify.js: No deviceId, redirecting from protected path ${currentPath} to ${publicLandingPage}`);
              window.location.replace(publicLandingPage);
         } else { 
@@ -151,13 +153,10 @@
     if (isVerified) {
         // --- Verified User ---
         console.log("verify.js: User is VERIFIED.");
-        
-        // Mark this path as processed
-        sessionStorage.setItem(processedKey, 'true');
   
         // SPECIAL CASE: If verified user directly accesses truemath.html, allow it
-        if (currentPath === '/welcome/truemath.html') {
-            console.log("verify.js: Verified user directly accessing truemath.html, allowing access");
+        if (currentPath === verifiedLandingPage) {
+            console.log(`verify.js: Verified user directly accessing ${verifiedLandingPage}, allowing access`);
             return; // Stop here and allow access
         }
   
@@ -205,8 +204,9 @@
         
         // Check if the current path is protected or starts with the proxy path
         const isOnProtectedPath = protectedPaths.includes(currentPath) || 
-                                  (currentPath === '/' || currentPath.startsWith('/uv/') || 
-                                   currentPath.startsWith('/epoxy/') || currentPath.startsWith('/baremux/'));
+                                  currentPath.startsWith('/uv/') || 
+                                  currentPath.startsWith('/epoxy/') || 
+                                  currentPath.startsWith('/baremux/');
         
         // If user tries to access a protected path -> Redirect to public landing
         if (isOnProtectedPath) {
