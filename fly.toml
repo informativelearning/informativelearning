@@ -1,36 +1,23 @@
-# fly.toml app configuration file
-app = "informativecourses" # Your Fly.io app name
-primary_region = "sjc"    # Your preferred region (change if needed)
+app = "informativecourses"
+primary_region = "sjc"
 
-# Define build strategy (using our Dockerfile)
 [build]
   dockerfile = "Dockerfile"
 
-# Define environment variables
-# PORT tells the app inside the container which port to listen on.
-# Fly.io automatically directs external traffic (port 80/443) to this internal port.
 [env]
   PORT = "8080"
-  # NODE_ENV = "production" # Already set in Dockerfile, so optional here
 
-# Define the main web service
 [http_service]
-  internal_port = 8080 # Port the app listens on INSIDE the container (matches ENV PORT and Dockerfile EXPOSE)
+  internal_port = 8080
   force_https = true
-  auto_stop_machines = false # Keep running even if idle (as you had before)
-  auto_start_machines = true
-  min_machines_running = 0   # Start with 0 for free tier compatibility (change to 1 if needed)
-  processes = ["app"]      # Matches the default process group name
+  auto_stop_machines = true  # Enables stopping Machines when idle
+  auto_start_machines = true # Keeps Machines starting on demand
+  min_machines_running = 0   # Allows scaling to zero when idle
+  processes = ["app"]
 
-# Define the VM size (start small, scale up if needed)
 [[vm]]
-  memory = "256mb"  # Standard free tier memory
+  memory = "512mb"           # Increased to 512 MB (closest valid size to 524 MB)
   cpu_kind = "shared"
   cpus = 1
-  # You can increase memory later with `fly scale vm memory=512` etc.
 
-# Define the persistent volume mount for the SQLite database
-# This ensures your devices.db file persists across deployments/restarts
-[mounts]
-  source = "data" # Name of the volume on Fly.io
-  destination = "/app/data" # Where the volume is mounted inside the container
+# [mounts] section removed since SQLite is no longer used (replaced by PostgreSQL)
