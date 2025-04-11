@@ -1,33 +1,27 @@
 # fly.toml app configuration file
-app = "informativecourses" # Your Fly.io app name
-primary_region = "sjc"    # Your preferred region
+app = "informativecourses"
+primary_region = "sjc"
 
-# Define build strategy
 [build]
   dockerfile = "Dockerfile"
 
-# Define environment variables
 [env]
   PORT = "8080"
-  # Add your DATABASE_URL in secrets, not here
-  # fly secrets set DATABASE_URL=postgres://username:password@hostname:5432/database
 
-# Define the main web service
 [http_service]
   internal_port = 8080
   force_https = true
-  auto_stop_machines = true  # Enable auto-stop to reduce costs when idle
+  auto_stop_machines = true
   auto_start_machines = true
-  min_machines_running = 0   # Start with 0 machines when no traffic
+  min_machines_running = 0
   processes = ["app"]
 
-# Define the VM size with increased memory
 [[vm]]
-  memory = "512mb"  # Increased to 512MB as requested
+  memory = "512mb"
   cpu_kind = "shared"
   cpus = 1
 
-# Add mounts section for the existing volume
-[mounts]
-  source = "vol_r1o8g05w78kowlw4"  # Using the ID from your volume list
-  destination = "/app/data"  # Adjust this path to where your app expects the volume
+# Correct mounts syntax when using volume ID
+[[mounts]]
+  source = "vol_r1o8g05w78kowlw4"
+  destination = "/app/data"
