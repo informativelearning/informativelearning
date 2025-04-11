@@ -1,23 +1,31 @@
-app = "informativecourses"
-primary_region = "sjc"
+# fly.toml app configuration file
+app = "informativecourses" # Your Fly.io app name
+primary_region = "sjc"    # Your preferred region
 
+# Define build strategy
 [build]
   dockerfile = "Dockerfile"
 
+# Define environment variables
 [env]
   PORT = "8080"
+  # Add your DATABASE_URL in secrets, not here
+  # fly secrets set DATABASE_URL=postgres://username:password@hostname:5432/database
 
+# Define the main web service
 [http_service]
   internal_port = 8080
   force_https = true
-  auto_stop_machines = true  # Enables stopping Machines when idle
-  auto_start_machines = true # Keeps Machines starting on demand
-  min_machines_running = 0   # Allows scaling to zero when idle
+  auto_stop_machines = true  # Enable auto-stop to reduce costs when idle
+  auto_start_machines = true
+  min_machines_running = 0   # Start with 0 machines when no traffic
   processes = ["app"]
 
+# Define the VM size with increased memory
 [[vm]]
-  memory = "512mb"           # Increased to 512 MB (closest valid size to 524 MB)
+  memory = "512mb"  # Increased to 512MB as requested
   cpu_kind = "shared"
   cpus = 1
 
-# [mounts] section removed since SQLite is no longer used (replaced by PostgreSQL)
+# Remove the mounts section since you're using PostgreSQL instead of SQLite
+# You'll need to provision a PostgreSQL database separately
