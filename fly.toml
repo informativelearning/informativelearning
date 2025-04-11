@@ -11,17 +11,41 @@ primary_region = "sjc"
 [http_service]
   internal_port = 8080
   force_https = true
-  auto_stop_machines = true
+  auto_stop_machines = true  # Changed from false to true as in your new config
   auto_start_machines = true
   min_machines_running = 0
   processes = ["app"]
 
 [[vm]]
-  memory = "512mb"
+  memory = "512mb"  # Increased from 256mb to 512mb as in your new config
   cpu_kind = "shared"
   cpus = 1
 
-# Correct mounts syntax when using volume ID
-[[mounts]]
-  source = "vol_r1o8g05w78kowlw4"
+[mounts]
+  source = "data"  # Using the original named volume instead of the ID
+  destination = "/app/data"# fly.toml app configuration file
+app = "informativecourses"
+primary_region = "sjc"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "8080"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = true  # Changed from false to true as in your new config
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ["app"]
+
+[[vm]]
+  memory = "512mb"  # Increased from 256mb to 512mb as in your new config
+  cpu_kind = "shared"
+  cpus = 1
+
+[mounts]
+  source = "data"  # Using the original named volume instead of the ID
   destination = "/app/data"
