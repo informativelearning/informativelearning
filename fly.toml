@@ -27,5 +27,7 @@ primary_region = "sjc"    # Your preferred region
   cpu_kind = "shared"
   cpus = 1
 
-# Remove the mounts section since you're using PostgreSQL instead of SQLite
-# You'll need to provision a PostgreSQL database separately
+# Add mounts section for the existing volume
+[mounts]
+  source = "vol_r1o8g05w78kowlw4"  # Using the ID from your volume list
+  destination = "/app/data"  # Adjust this path to where your app expects the volume
