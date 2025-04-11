@@ -1,7 +1,7 @@
-// static/js/verify.js (Fixed version)
+// static/js/verify.js (Simplified version)
 
 (async function() {
-    console.log("verify.js (Final Fixed version 4.0) executing...");
+    console.log("verify.js (Simplified version) executing...");
   
     if (window.self !== window.top) {
         console.log("verify.js: Skipping, running in iframe.");
@@ -11,8 +11,6 @@
     // --- Configuration with ABSOLUTE paths ---
     const publicLandingPage = '/welcome/homepage.html';   // Public landing page path
     const verifiedLandingPage = '/welcome/truemath.html'; // Verified landing page / popup target path
-    const proxyPath = '/';                                // Path for the main proxy UI
-    const faviconPath = '/welcome/favicon.ico';           // Path to the favicon for the popup
   
     // --- Get Device ID (from deviceId.js) ---
     await new Promise(resolve => setTimeout(resolve, 20)); // Give deviceId.js a moment
@@ -38,14 +36,14 @@
         // Add any other truly public page paths here
     ];
   
-    // All paths that require *at least* general verification (verified=1 and not expired)
+    // All paths that require verification
     const protectedPaths = [
         '/welcome/truemath.html',
         '/welcome/coursebooks.html',
-        '/welcome/funinlearning.html', // Games page
+        '/welcome/funinlearning.html',
         '/welcome/collegecourses.html',
         '/' // Proxy UI root
-        // Add any other paths that require login/verification
+        // Add any other paths that require verification
     ];
   
     // Flag to track if we've already processed this page load
@@ -111,7 +109,7 @@
     }
   
     // --- Fetch Verification Status ---
-    let verificationStatus = null;
+    let isVerified = false;
     let apiError = false;
     try {
         console.log(`verify.js: Checking verification status for ${deviceId}...`);
@@ -123,34 +121,23 @@
             throw new Error(`API check HTTP status ${response.status}`); 
         }
         
-        verificationStatus = await response.json();
+        const verificationStatus = await response.json();
         console.log("verify.js: Raw API response:", JSON.stringify(verificationStatus));
         
-        // Validate response structure
-        if (!verificationStatus || typeof verificationStatus.verified === 'undefined') {
+        // Simplified verification check - we just need the boolean verified value
+        if (typeof verificationStatus.verified === 'undefined') {
             throw new Error('Invalid API response format');
         }
         
-        console.log("verify.js: Verification status processed:", verificationStatus);
+        isVerified = verificationStatus.verified === true;
+        console.log(`verify.js: Verification status: ${isVerified ? 'Verified' : 'Not Verified'}`);
     } catch (error) {
         console.error("verify.js: Verification check failed:", error);
         apiError = true;
     }
   
-    // Determine verification state, considering API errors
-    const isVerified = verificationStatus?.verified === true && !apiError;
-    
-    // Extract permissions - ensure we handle legacy and new format
-    const permissions = {
-        proxy: verificationStatus?.access?.proxy === true,
-        games: verificationStatus?.access?.games === true,
-        other: verificationStatus?.access?.other || ''
-    };
-  
-    console.log(`verify.js: Final Check - isVerified: ${isVerified}, Current Path: ${currentPath}, Permissions:`, permissions);
-  
     // --- Apply Logic based on Status ---
-    if (isVerified) {
+    if (isVerified && !apiError) {
         // --- Verified User ---
         console.log("verify.js: User is VERIFIED.");
   
@@ -165,34 +152,6 @@
             console.log(`verify.js: Verified user on public page (${currentPath}). Triggering popup/redirect.`);
             openDashboardAndRedirect(deviceId);
             return; // Stop script execution after triggering
-        }
-  
-        // Handle exact path matches for permissions first
-        if (currentPath === '/' || currentPath.startsWith('/?')) { // Proxy root with possible query params
-            if (!permissions.proxy) {
-                console.log(`verify.js: Verified user lacks proxy permission, redirecting to ${verifiedLandingPage}`);
-                window.location.replace(verifiedLandingPage);
-                return;
-            } else { 
-                console.log(`verify.js: Verified user WITH proxy permission allowed at ${currentPath}.`); 
-            }
-        }
-        else if (currentPath === '/welcome/funinlearning.html') { // Games page
-            if (!permissions.games) {
-                console.log(`verify.js: Verified user lacks games permission, redirecting to ${verifiedLandingPage}`);
-                window.location.replace(verifiedLandingPage);
-                return;
-            } else { 
-                console.log(`verify.js: Verified user WITH games permission allowed at ${currentPath}.`); 
-            }
-        }
-        // For coursebooks and collegecourses, use the 'other' permission if available
-        // or default to allow for verified users
-        else if (protectedPaths.includes(currentPath)) {
-            // We're allowing verified users to access all other protected paths by default
-            console.log(`verify.js: Verified user accessing protected path: ${currentPath}`);
-            // If you want to enforce specific permissions for these paths,
-            // add additional logic here
         }
         
         // If verified and on an allowed page, just stay

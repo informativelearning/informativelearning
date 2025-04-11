@@ -16,8 +16,6 @@
         .form-section { margin-bottom: 20px; padding: 15px; border: 1px solid #ccc; border-radius: 5px; background-color: #f9f9f9; }
         label { display: inline-block; margin-right: 10px; min-width: 100px;}
         input[type="text"], input[type="number"], select { padding: 8px; margin-right: 10px; border: 1px solid #ccc; border-radius: 3px; }
-        input[type="checkbox"] { margin-right: 5px; vertical-align: middle;}
-        .permission-label { min-width: auto; margin-right: 15px; }
         #statusMessage { margin-top: 15px; padding: 10px; border-radius: 3px; display: none; }
         .status-success { background-color: #dff0d8; border: 1px solid #d6e9c6; color: #3c763d; }
         .status-error { background-color: #f2dede; border: 1px solid #ebccd1; color: #a94442; }
@@ -32,7 +30,7 @@
     
     <div class="form-section">
         <h2>Add / Update Device Verification</h2>
-        <form id="verifyForm" onsubmit="return false;"> <!-- Added onsubmit="return false;" -->
+        <form id="verifyForm" onsubmit="return false;">
             <div>
                 <label for="deviceId">Device ID:</label>
                 <input type="text" id="deviceId" name="deviceId" required size="50" placeholder="Enter Device ID from user">
@@ -53,19 +51,7 @@
                 </div>
             </div>
             <br>
-            <div>
-                <label>Permissions:</label>
-                <input type="checkbox" id="access_proxy" name="access_proxy" value="1"> 
-                <label class="permission-label" for="access_proxy">Proxy Access (/)</label>
-                
-                <input type="checkbox" id="access_games" name="access_games" value="1"> 
-                <label class="permission-label" for="access_games">Games Access</label>
-                
-                <input type="checkbox" id="access_other" name="access_other" value="1"> 
-                <label class="permission-label" for="access_other">Other Access</label>
-            </div>
-            <br>
-            <button type="button" id="submitButton">Verify / Update Device</button> <!-- Changed to type="button" -->
+            <button type="button" id="submitButton">Verify / Update Device</button>
         </form>
     </div>
 
@@ -77,14 +63,11 @@
                 <th>Status</th>
                 <th>Verified At</th>
                 <th>Expires At</th>
-                <th>Proxy</th>
-                <th>Games</th>
-                <th>Other</th>
                 <th>Actions</th>
             </tr>
         </thead>
         <tbody id="devicesTableBody">
-            <tr><td colspan="8">Loading devices...</td></tr>
+            <tr><td colspan="5">Loading devices...</td></tr>
         </tbody>
     </table>
 
@@ -131,24 +114,10 @@
             }
         }
 
-        function formatBoolean(value) {
-            return value === 1 ? 'Yes' : 'No';
-        }
-
-        // Debounce function to prevent multiple rapid submissions
-        function debounce(func, wait) {
-            let timeout;
-            return function(...args) {
-                const context = this;
-                clearTimeout(timeout);
-                timeout = setTimeout(() => func.apply(context, args), wait);
-            };
-        }
-
         // --- API Calls ---
         async function fetchDevices() {
             console.log("Fetching device list...");
-            devicesTableBody.innerHTML = '<tr><td colspan="8">Loading devices...</td></tr>';
+            devicesTableBody.innerHTML = '<tr><td colspan="5">Loading devices...</td></tr>';
             try {
                 const response = await fetch('/admin/api/list-devices');
                 if (!response.ok) {
@@ -159,12 +128,11 @@
                 renderDevices(devices);
             } catch (error) {
                 console.error('Error fetching devices:', error);
-                devicesTableBody.innerHTML = '<tr><td colspan="8" style="color: red;">Error loading devices. Check console.</td></tr>';
+                devicesTableBody.innerHTML = '<tr><td colspan="5" style="color: red;">Error loading devices. Check console.</td></tr>';
                 showStatus(`Error loading devices: ${error.message}`, true);
             }
         }
 
-        // Changed how we handle form submission - now using a dedicated function
         async function verifyDevice() {
             console.log("verifyDevice function called");
             
@@ -177,11 +145,6 @@
             } else {
                 days = parseInt(durationType, 10);
             }
-            
-            // Get checkbox values (checked = 1, unchecked = 0)
-            const access_proxy = document.getElementById('access_proxy').checked ? 1 : 0;
-            const access_games = document.getElementById('access_games').checked ? 1 : 0;
-            const access_other = document.getElementById('access_other').checked ? 1 : 0;
 
             if (!deviceId) {
                 showStatus('Device ID cannot be empty.', true);
@@ -195,10 +158,8 @@
 
             const body = {
                 deviceId,
-                days,
-                access_proxy,
-                access_games,
-                access_other
+                days
+                // No individual permissions - simplified!
             };
             console.log("Verifying device with body:", body);
 
@@ -230,7 +191,7 @@
             }
         }
         
-        // Use the click event on the submit button instead of form submit
+        // Use the click event on the submit button
         submitButton.addEventListener('click', verifyDevice);
         console.log("Submit button click event listener attached");
 
@@ -265,7 +226,7 @@
         function renderDevices(devices) {
             devicesTableBody.innerHTML = ''; // Clear previous content
             if (!devices || devices.length === 0) {
-                devicesTableBody.innerHTML = '<tr><td colspan="8">No devices found.</td></tr>';
+                devicesTableBody.innerHTML = '<tr><td colspan="5">No devices found.</td></tr>';
                 return;
             }
 
@@ -291,9 +252,6 @@
                 
                 row.insertCell().textContent = formatTimestamp(device.verifiedAt);
                 row.insertCell().textContent = formatTimestamp(device.verification_expires_at);
-                row.insertCell().textContent = formatBoolean(device.access_proxy);
-                row.insertCell().textContent = formatBoolean(device.access_games);
-                row.insertCell().textContent = formatBoolean(device.access_other);
 
                 // Actions cell
                 const actionsCell = row.insertCell();
@@ -317,7 +275,6 @@
         }
 
         // --- Initialization ---
-        // Removed the form submit event listener since we're using button click now
         fetchDevices(); // Load initial device list when page loads
         
         // Auto-refresh the device list every 60 seconds

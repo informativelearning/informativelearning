@@ -62,15 +62,13 @@ async function initializeDatabase() {
     if (!pool) return console.log('[INIT] Skipping database initialization - no connection pool');
     
     console.log('[INIT - Postgres Connect v2] Initializing database table...');
+    // Simplified table structure - removed access_proxy, access_games, access_other columns
     const createTableQuery = `
       CREATE TABLE IF NOT EXISTS verified_devices (
         "deviceId" TEXT PRIMARY KEY NOT NULL,
         "verified" INTEGER DEFAULT 0 NOT NULL,
         "verifiedAt" TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-        "verification_expires_at" BIGINT,
-        "access_proxy" INTEGER DEFAULT 0 NOT NULL,
-        "access_games" INTEGER DEFAULT 0 NOT NULL,
-        "access_other" TEXT
+        "verification_expires_at" BIGINT
       );
     `;
     let client;
@@ -210,7 +208,7 @@ fastify.post('/api/register-device', async (request, reply) => {
     }
 });
 
-// API: Check Verification Status
+// API: Check Verification Status - Simplified to just check if verified
 fastify.get('/api/check-verification', async (request, reply) => {
     const deviceId = request.query.deviceId;
     console.log(`[API] GET /api/check-verification for ID: ${deviceId}`);
@@ -222,10 +220,7 @@ fastify.get('/api/check-verification', async (request, reply) => {
         const result = await pool.query(`
             SELECT 
                 verified, 
-                "verification_expires_at", 
-                access_proxy, 
-                access_games, 
-                access_other 
+                "verification_expires_at"
             FROM verified_devices 
             WHERE "deviceId" = $1
         `, [deviceId]);
@@ -244,11 +239,6 @@ fastify.get('/api/check-verification', async (request, reply) => {
         reply.send({
             verified: device.verified === 1 && !isExpired,
             expired: isExpired,
-            access: {
-                proxy: device.access_proxy === 1,
-                games: device.access_games === 1,
-                other: device.access_other
-            },
             expiresAt: device.verification_expires_at
         });
     } catch (err) {
@@ -279,7 +269,8 @@ fastify.register(async function adminApiRoutes(fastify, options) {
         console.log('[API] GET /api/list-devices');
         if (!pool) return reply.code(503).send({ error: 'Database not connected' });
         try {
-            const result = await pool.query('SELECT "deviceId", "verified", "verifiedAt", "verification_expires_at", "access_proxy", "access_games", "access_other" FROM verified_devices ORDER BY "verifiedAt" DESC');
+            // Removed access_* fields from query
+            const result = await pool.query('SELECT "deviceId", "verified", "verifiedAt", "verification_expires_at" FROM verified_devices ORDER BY "verifiedAt" DESC');
             reply.send(result.rows || []);
         } catch (err) {
             console.error('[API Error] /api/list-devices:', err);
@@ -287,33 +278,27 @@ fastify.register(async function adminApiRoutes(fastify, options) {
         }
     });
 
-    // API: Verify/Update Device (Apply auth check before handler)
+    // API: Verify/Update Device (Apply auth check before handler) - Simplified
     fastify.post('/api/verify-device', { preHandler: checkAdminAuth }, async (request, reply) => {
-        // Default values if not provided in request
-        const { deviceId, days = 14, access_proxy = 0, access_games = 0, access_other = null } = request.body || {};
+        // Simplified to only handle deviceId and days
+        const { deviceId, days = 14 } = request.body || {};
         console.log(`[API] POST /api/verify-device for ID: ${deviceId}`);
         if (!deviceId) return reply.code(400).send({ error: 'Device ID required' });
         if (!pool) return reply.code(503).send({ error: 'Database not connected' });
 
         // Use BIGINT for timestamp (milliseconds since epoch)
         const expiresAt = Date.now() + Number(days) * 24 * 60 * 60 * 1000;
-        // Ensure boolean flags are integers 0 or 1
-        const proxyAccess = access_proxy ? 1 : 0;
-        const gamesAccess = access_games ? 1 : 0;
 
         const sql = `
-            INSERT INTO verified_devices ("deviceId", verified, "verification_expires_at", access_proxy, access_games, access_other, "verifiedAt")
-            VALUES ($1, 1, $2, $3, $4, $5, NOW())
+            INSERT INTO verified_devices ("deviceId", verified, "verification_expires_at", "verifiedAt")
+            VALUES ($1, 1, $2, NOW())
             ON CONFLICT("deviceId") DO UPDATE SET
                 verified=1,
                 "verification_expires_at" = excluded."verification_expires_at",
-                access_proxy = excluded.access_proxy,
-                access_games = excluded.access_games,
-                access_other = excluded.access_other,
                 "verifiedAt" = NOW();
         `;
         try {
-            const result = await pool.query(sql, [deviceId, expiresAt, proxyAccess, gamesAccess, access_other]);
+            const result = await pool.query(sql, [deviceId, expiresAt]);
             reply.send({ success: true, rowCount: result.rowCount });
         } catch (err) {
             console.error('[API Error] /api/verify-device:', err);
