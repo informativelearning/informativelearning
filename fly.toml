@@ -42,7 +42,7 @@ primary_region = "sjc"
   processes = ["app"]
 
 [[vm]]
-  memory = "512mb"  # Increased from 256mb to 512mb as in your new config
+  memory = "256mb"  # Increased from 256mb to 512mb as in your new config
   cpu_kind = "shared"
   cpus = 1
 
